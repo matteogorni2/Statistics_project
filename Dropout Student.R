@@ -18,7 +18,10 @@ data$Output[index_enrolled] <- 'Dropout'
 data <- data[, -c(20:31)]
 # Dato che raggruppiamo i corsi non c'interessa quali siano serali
 data <- data[, -5]
-
+# Rimuoviamo Application.mode e order che sono confusionarie
+index <- which(colnames(data) == 'Application.mode' | 
+                 colnames(data) == 'Application.order')
+data <- data[, -index]
 ### Collapse some categorical factor
 
 ## Marital status
@@ -37,10 +40,6 @@ chisq.test(table(data$Marital.status,
 # e in più sono pochi
 # data$Marital.status[-index_single] <- 'Others'
 
-
-## Application mode
-table(data$Application.order, data$Application.mode)
-# Da capire cosa significa. Probabilmente possiamo toglierli
 
 
 ## Course
@@ -160,7 +159,7 @@ index_m_white <- which(data$Mother.s.occupation == 2 |
                          data$Mother.s.occupation == 27 |
                          data$Mother.s.occupation == 28 |
                          data$Mother.s.occupation == 29)
-data$Mother.s.occupation[index_m_no_worker] <- 'No Worker'
+data$Mother.s.occupation[index_m_no_worker] <- 'Others'
 data$Mother.s.occupation[index_m_white] <- 'White Collar'
 data$Mother.s.occupation[-c(index_m_no_worker, 
                             index_m_white)] <- 'Blue Collar'
@@ -190,7 +189,7 @@ index_f_white <- which(data$Father.s.occupation == 2 |
                          data$Father.s.occupation == 27 |
                          data$Father.s.occupation == 28 |
                          data$Father.s.occupation == 29)
-data$Father.s.occupation[index_f_no_worker] <- 'No Worker'
+data$Father.s.occupation[index_f_no_worker] <- 'Others'
 data$Father.s.occupation[index_f_white] <- 'White Collar'
 data$Father.s.occupation[-c(index_f_no_worker, 
                             index_f_white)] <- 'Blue Collar'
@@ -204,7 +203,7 @@ str(data)
 
 # Change features as categorical
 colnames(data)
-categorical_names <- colnames(data)[-c(17, 19:21)]
+categorical_names <- colnames(data)[-c(15, 17:19)]
 
 for(i in categorical_names){
   data[, i] <- as.factor(data[, i])
@@ -237,9 +236,7 @@ data <- data[, -which(colnames(data) == 'International')]
 
 
 ## Models (Poi questa parte si farà con il train e test)
-fit1 <- glm(Output ~ . - 
-              Application.order - 
-              Application.mode, 
+fit1 <- glm(Output ~ ., 
             family = binomial, 
             data = data)
 summary(fit1)
@@ -325,9 +322,7 @@ boxplot(train$GDP ~ train$Output)
 ######################################
 # Logistic Regression
 ######################################
-fit1 <- glm(Output ~ . - 
-              Application.mode -
-              Application.order, 
+fit1 <- glm(Output ~ ., 
             family = binomial, 
             data = train)
 summary(fit1)
@@ -335,9 +330,11 @@ fit2 <- step(fit1,
              direction = 'backward')
 summary(fit2)
 
-fit.logit <- fitted(fit2)
-roc.out.logit <- roc(train$Output ~ fit.logit, 
-               levels = c('Dropout', 'Graduate'))
+pred.logit <- predict(fit2, 
+                      newdata = test, 
+                      type = 'response')
+roc.out.logit <- roc(test$Output ~ pred.logit, 
+                     levels = c('Dropout', 'Graduate'))
 plot(roc.out.logit,  
      print.auc=TRUE, 
      legacy.axes=TRUE, 
@@ -345,10 +342,6 @@ plot(roc.out.logit,
      ylab="True Positive Rate")
 auc(roc.out.logit)
 
-# Previsioni 
-pred.logit <- predict(fit2, 
-                      newdata = test, 
-                      type = 'response')
 
 
 ######################################
@@ -356,9 +349,7 @@ pred.logit <- predict(fit2,
 ######################################
 
 library(MASS)
-lda.fit <- lda(Output ~ . - 
-                 Application.mode -
-                 Application.order, 
+lda.fit <- lda(Output ~ ., 
                data = train)
 lda.fit
 
@@ -372,8 +363,10 @@ plot(lda.fit, type="density")
 plot(lda.fit, type="both")
 
 
-fit.lda <- predict(lda.fit)
-roc.out.lda <- roc(train$Output ~ fit.lda$posterior[, 2], 
+pred.lda <- predict(lda.fit, 
+                    newdata = test, 
+                    type = 'response')
+roc.out.lda <- roc(test$Output ~ pred.lda$posterior[, 2], 
                    levels = c('Dropout', 'Graduate'))
 plot(roc.out.lda,  
      print.auc=TRUE, 
@@ -383,21 +376,18 @@ plot(roc.out.lda,
      main = 'LDA')
 auc(roc.out.lda)
 
-# Previsioni
-lda.pred <- predict(lda.fit, 
-                    newdata = test)
 
 ######################################
 # Quadratic Discriminant Analysis (QDA)
 ######################################
 
-qda.fit <- qda(Output ~ . - 
-                 Application.mode -
-                 Application.order, 
+qda.fit <- qda(Output ~ ., 
                data = train)
 qda.fit
-fit.qda <- predict(qda.fit)
-roc.out.qda <- roc(train$Output ~ fit.qda$posterior[, 2], 
+pred.qda <- predict(qda.fit, 
+                    newdata = test, 
+                    type = 'response')
+roc.out.qda <- roc(test$Output ~ pred.qda$posterior[, 2], 
                    levels = c('Dropout', 'Graduate'))
 plot(roc.out.qda,  
      print.auc=TRUE, 
@@ -407,9 +397,6 @@ plot(roc.out.qda,
      main = 'LDA')
 auc(roc.out.qda)
 
-# Previsioni
-qda.pred <- predict(qda.fit, 
-                    newdata = test)
 
 
 ###########################
@@ -428,46 +415,44 @@ library(class)
 library(glmnet)
 
 
-my_formula <- as.formula(Output ~ . - 
-                           Application.order - 
-                           Application.order)
-design_matrix_train <- model.matrix(my_formula,
+design_matrix_train <- model.matrix(Output ~ .,
                                     data = train)
 
-design_matrix_test <- model.matrix(my_formula,
+design_matrix_test <- model.matrix(Output ~ .,
                                    data = test)
 
 # Adattamento del modello Ridge con regressione Binomiale
 ridge_model <- glmnet(x = design_matrix_train, 
-                         y = train$Output,
-                         alpha = 0, 
-                         intercept = F, 
-                         family = "binomial")
+                      y = train$Output,
+                      alpha = 0, 
+                      intercept = F, 
+                      family = "binomial")
 # Find the best lambda
 
-prevision <- predict(ridge_model, 
-                      newx = test$Output, 
-                     type = 'response')
+predictions <- predict(ridge_model, 
+                       newx = design_matrix_test, 
+                       type = 'response')
+##########################
 
-mse.lambda <- colMeans((test$Output - prevision)^2)
-lambda.opt.ind <- which.min(mse.lambda)
-lambda.opt <- ridge1$lambda[lambda.opt.ind]
+accuracies <- c()
 
-pred.ridge <- previsione[, lambda.opt.ind]
+for (i in 1:ncol(predictions)) {
+  predicted_classes <- round(predictions[, i])
+  confusion_matrix <- table(predicted_classes, test$Output)
+  accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+  accuracies <- c(accuracies, accuracy)
+}
+
+best_lambda_index <- which.max(accuracies)
+ridge.pred <- matrix(predictions[, best_lambda_index], 
+                     ncol = 1)
+best_accuracy <- accuracies[best_lambda_index]
+
+colnames(ridge.pred) <- 'ridge.pred'
 
 
-fit.ridge <- predict(ridge_model, 
-                     newx = design_matrix_train, 
-                     type = 'response')
-colnames(fit.ridge) <- 'fit.ridge'
-
-ridge.pred <- predict(ridge_model, 
-                      newx = design_matrix_test, 
-                      type = 'response')
-colnames(ridge.pred) <- 'pred.ridge'
-
-roc.out.ridge <- roc(train$Output ~ as.numeric(fit.ridge), 
-                   levels = c('Dropout', 'Graduate'))
+roc.out.ridge <- roc(test$Output ~ as.numeric(ridge.pred), 
+                     levels = c('Dropout', 'Graduate'))
 plot(roc.out.ridge,  
      print.auc=TRUE, 
      legacy.axes=TRUE, 
@@ -483,21 +468,35 @@ auc(roc.out.ridge)
 
 # Adattamento del modello Lasso con regressione Binomiale
 lasso_model <- glmnet(x = design_matrix_train, 
-                         y = train$Output,
-                         alpha = 1, 
-                         intercept = F, 
-                         family = "binomial")
-fit.lasso <- predict(lasso_model, 
-                     newx = design_matrix_train, 
-                     type = 'response')
-colnames(fit.lasso) <- 'fit.lasso'
+                      y = train$Output,
+                      alpha = 1, 
+                      intercept = F, 
+                      family = "binomial")
+# Find the best lambda
 
-lasso.pred <- predict(lasso_model, 
-                      newx = design_matrix_test, 
-                      type = 'response')
-colnames(lasso.pred) <- 'pred.lasso'
+predictions <- predict(lasso_model, 
+                       newx = design_matrix_test, 
+                       type = 'response')
+##########################
 
-roc.out.lasso <- roc(train$Output ~ as.numeric(fit.lasso), 
+accuracies <- c()
+
+for (i in 1:ncol(predictions)) {
+  predicted_classes <- round(predictions[, i])
+  confusion_matrix <- table(predicted_classes, test$Output)
+  accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+  accuracies <- c(accuracies, accuracy)
+}
+
+best_lambda_index <- which.max(accuracies)
+lasso.pred <- matrix(predictions[, best_lambda_index], 
+                     ncol = 1)
+best_accuracy <- accuracies[best_lambda_index]
+
+colnames(lasso.pred) <- 'lasso.pred'
+
+
+roc.out.lasso <- roc(test$Output ~ as.numeric(lasso.pred), 
                      levels = c('Dropout', 'Graduate'))
 plot(roc.out.lasso,  
      print.auc=TRUE, 
@@ -512,6 +511,40 @@ auc(roc.out.lasso)
 plot(ridge_model, xvar="lambda", label=TRUE)
 
 plot(ridge_model, xvar = "norm", label=TRUE)
-plot(ridge.mod, xvar = "dev",  label=TRUE)
+plot(ridge_model, xvar = "dev",  label=TRUE)
 
 plot(ridge_model, xvar = 'norm')
+
+
+
+
+
+# Analisi esplorativa -----------------------------------------------------
+
+str(data)
+col_grad <- c('red', 'darkgreen')
+barplot(table(data$Output), 
+        col = col_grad)
+barplot(as.matrix(prop.table(table(data$Marital.status))), 
+        horiz = T)
+barplot(as.matrix((table(data$Output, data$Marital.status))), 
+        beside = T,
+        horiz = T, 
+        legend = T, 
+        col = col_grad, 
+        las = 2)
+barplot(table(data$Course, 
+              data$Output), 
+        horiz = T, 
+        beside = T, 
+        col = col_grad)
+barplot(table(data$Output, 
+              data$Previous.qualification), 
+        horiz = T, 
+        beside = T, 
+        col = col_grad)
+barplot(table(data$Output, 
+              data$Nacionality), 
+        horiz = T, 
+        beside = T, 
+        col = col_grad)
