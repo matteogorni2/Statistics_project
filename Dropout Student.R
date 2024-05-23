@@ -264,27 +264,27 @@ prop.table(table(data$Output, round(fitted(fit2)))) %>%
 # ROC
 library(pROC)
 
-logistic.prob <- fitted(fit2, type = 'response')
-roc.out <- roc(data$Output, logistic.prob, levels=c("Dropout", 
+logistic_prob <- fitted(fit2, type = 'response')
+roc_out <- roc(data$Output, logistic_prob, levels=c("Dropout", 
                                                     "Graduate"))
 
 # different ways of plotting the ROC curve
-plot(roc.out) # check values on the x axis
+plot(roc_out) # check values on the x axis
 
 # legacy.axes=TRUE   1 - specificity on the x axis
-plot(roc.out, legacy.axes=TRUE)
+plot(roc_out, legacy.axes=TRUE)
 
 # compute AUC = Area Under the Curve
-plot(roc.out,  print.auc=TRUE, legacy.axes=TRUE, xlab="False Positive Rate", ylab="True Positive Rate")
-auc(roc.out)
+plot(roc_out,  print.auc=TRUE, legacy.axes=TRUE, xlab="False Positive Rate", ylab="True Positive Rate")
+auc(roc_out)
 
 # specificity (TNR) and sensitivity (TPR) for a given threshold
-coords(roc.out, 0.5)
+coords(roc_out, 0.5)
 
-coords(roc.out, seq(0.1, 0.9, by=0.1))
+coords(roc_out, seq(0.1, 0.9, by=0.1))
 
 # threshold that maximizes the sum of specificity (TNR) and sensitivity (TPR)
-coords(roc.out, "best")
+coords(roc_out, "best")
 
 
 table(data$Output, 
@@ -306,12 +306,32 @@ test <- data[-index, ]
 
 # Rimozione degli outliers
 boxplot(train$Age.at.enrollment ~ train$Output)
-max_age_drop <- min(boxplot(train$Age.at.enrollment[train$Output == 'Dropout'])$out)
-index_age_drop <- which(train$Age.at.enrollment[train$Output == 'Dropout'] >= max_age_drop)
-max_age_grad <- min(boxplot(train$Age.at.enrollment[train$Output == 'Graduate'])$out)
-index_age_grad <- which(train$Age.at.enrollment[train$Output == 'Graduate'] >= max_age_grad)
-train <- train[-c(index_age_drop, index_age_grad), ]
+max_age_drop <- 1
+max_age_grad <- 1
+while(abs(max_age_drop) != Inf |
+      abs(max_age_grad) != Inf){
+  max_age_drop <- min(boxplot(train$Age.at.enrollment[train$Output == 'Dropout'])$out)
+  index_age_drop <- which(train$Age.at.enrollment >= max_age_drop &
+                            train$Output == 'Dropout')
+  max_age_grad <- min(boxplot(train$Age.at.enrollment[train$Output == 'Graduate'])$out)
+  index_age_grad <- which(train$Age.at.enrollment >= max_age_grad &
+                            train$Output == 'Graduate')
+  if(abs(max_age_drop) != Inf &
+     abs(max_age_grad) != Inf) {
+    train <- train[-c(index_age_drop, index_age_grad), ]
+    }
+  if(abs(max_age_drop) != Inf &
+     abs(max_age_grad) == Inf) {
+    train <- train[-c(index_age_drop), ]
+  }
+  if(abs(max_age_drop) == Inf &
+     abs(max_age_grad) != Inf) {
+    train <- train[-c(index_age_grad), ]
+  }
+}
 
+
+boxplot(train$Age.at.enrollment ~ train$Output)
 boxplot(train$Unemployment.rate ~ train$Output)
 boxplot(train$Inflation.rate ~ train$Output)
 boxplot(train$GDP ~ train$Output)
@@ -329,18 +349,22 @@ summary(fit1)
 fit2 <- step(fit1, 
              direction = 'backward')
 summary(fit2)
+par(mfrow = c(2, 2))
+plot(fit2)
+par(mfrow = c(1, 1))
 
-pred.logit <- predict(fit2, 
+# Qui diocane
+pred_logit <- predict(fit2, 
                       newdata = test, 
                       type = 'response')
-roc.out.logit <- roc(test$Output ~ pred.logit, 
+roc_out_logit <- roc(test$Output ~ pred_logit, 
                      levels = c('Dropout', 'Graduate'))
-plot(roc.out.logit,  
+plot(roc_out_logit,  
      print.auc=TRUE, 
      legacy.axes=TRUE, 
      xlab="False Positive Rate", 
      ylab="True Positive Rate")
-auc(roc.out.logit)
+auc(roc_out_logit)
 
 
 
@@ -349,53 +373,53 @@ auc(roc.out.logit)
 ######################################
 
 library(MASS)
-lda.fit <- lda(Output ~ ., 
+lda_fit <- lda(Output ~ ., 
                data = train)
-lda.fit
+lda_fit
 
 # plot the values of the discriminant function for the two groups
 # 
-plot(lda.fit, 
+plot(lda_fit, 
      type="histogram")
-plot(lda.fit) # histogram is the default value
+plot(lda_fit) # histogram is the default value
 
-plot(lda.fit, type="density")
-plot(lda.fit, type="both")
+plot(lda_fit, type="density")
+plot(lda_fit, type="both")
 
 
-pred.lda <- predict(lda.fit, 
+pred_lda <- predict(lda_fit, 
                     newdata = test, 
                     type = 'response')
-roc.out.lda <- roc(test$Output ~ pred.lda$posterior[, 2], 
+roc_out_lda <- roc(test$Output ~ pred_lda$posterior[, 2], 
                    levels = c('Dropout', 'Graduate'))
-plot(roc.out.lda,  
+plot(roc_out_lda,  
      print.auc=TRUE, 
      legacy.axes=TRUE, 
      xlab="False Positive Rate", 
      ylab="True Positive Rate", 
      main = 'LDA')
-auc(roc.out.lda)
+auc(roc_out_lda)
 
 
 ######################################
 # Quadratic Discriminant Analysis (QDA)
 ######################################
 
-qda.fit <- qda(Output ~ ., 
+qda_fit <- qda(Output ~ ., 
                data = train)
-qda.fit
-pred.qda <- predict(qda.fit, 
+qda_fit
+pred_qda <- predict(qda_fit, 
                     newdata = test, 
                     type = 'response')
-roc.out.qda <- roc(test$Output ~ pred.qda$posterior[, 2], 
+roc_out_qda <- roc(test$Output ~ pred_qda$posterior[, 2], 
                    levels = c('Dropout', 'Graduate'))
-plot(roc.out.qda,  
+plot(roc_out_qda,  
      print.auc=TRUE, 
      legacy.axes=TRUE, 
      xlab="False Positive Rate", 
      ylab="True Positive Rate", 
      main = 'LDA')
-auc(roc.out.qda)
+auc(roc_out_qda)
 
 
 
@@ -444,22 +468,22 @@ for (i in 1:ncol(predictions)) {
 }
 
 best_lambda_index <- which.max(accuracies)
-ridge.pred <- matrix(predictions[, best_lambda_index], 
+ridge_pred <- matrix(predictions[, best_lambda_index], 
                      ncol = 1)
 best_accuracy <- accuracies[best_lambda_index]
 
-colnames(ridge.pred) <- 'ridge.pred'
+colnames(ridge_pred) <- 'ridge_pred'
 
 
-roc.out.ridge <- roc(test$Output ~ as.numeric(ridge.pred), 
+roc_out_ridge <- roc(test$Output ~ as.numeric(ridge_pred), 
                      levels = c('Dropout', 'Graduate'))
-plot(roc.out.ridge,  
+plot(roc_out_ridge,  
      print.auc=TRUE, 
      legacy.axes=TRUE, 
      xlab="False Positive Rate", 
      ylab="True Positive Rate", 
      main = 'LDA')
-auc(roc.out.ridge)
+auc(roc_out_ridge)
 
 
 ###########################
@@ -489,22 +513,22 @@ for (i in 1:ncol(predictions)) {
 }
 
 best_lambda_index <- which.max(accuracies)
-lasso.pred <- matrix(predictions[, best_lambda_index], 
+lasso_pred <- matrix(predictions[, best_lambda_index], 
                      ncol = 1)
 best_accuracy <- accuracies[best_lambda_index]
 
-colnames(lasso.pred) <- 'lasso.pred'
+colnames(lasso_pred) <- 'lasso_pred'
 
 
-roc.out.lasso <- roc(test$Output ~ as.numeric(lasso.pred), 
+roc_out_lasso <- roc(test$Output ~ as.numeric(lasso_pred), 
                      levels = c('Dropout', 'Graduate'))
-plot(roc.out.lasso,  
+plot(roc_out_lasso,  
      print.auc=TRUE, 
      legacy.axes=TRUE, 
      xlab="False Positive Rate", 
      ylab="True Positive Rate", 
      main = 'LDA')
-auc(roc.out.lasso)
+auc(roc_out_lasso)
 
 ##à DA vedere se lancia
 # add labels to identify the variables
@@ -548,3 +572,9 @@ barplot(table(data$Output,
         horiz = T, 
         beside = T, 
         col = col_grad)
+
+
+############
+outl <- c(1858, 2406, 2984, 3472, 3677)
+index_train <- rownames(train)
+train[c(which(index_train %in% outl), 3), ]
