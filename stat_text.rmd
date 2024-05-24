@@ -1,6 +1,6 @@
 ---
 title: "Stat_text"
-output: html_document
+output: pdf_document
 date: "2024-05-23"
 ---
 
@@ -8,7 +8,7 @@ date: "2024-05-23"
 
 We originally found the dataset on Kaggle. The data was collected by the Polytechnic Institute of Portalegre in Portugal to build machine learning models that predict a student’s outcome based on various socioeconomic factors and academic performance. This was done to develop an analytics tool for the tutoring program to direct their efforts more effectively.
 
-The dataset was created from several disjoint databases and includes students enrolled in different undergraduate degrees, such as agronomy, design, education, nursing, journalism, management, social service, and technologies.
+The dataset was created from several disjoint databases and includes students enrolled in different undergraduate degrees, such as agronomy, design, education, nursing, journalism, management, social service, and technologies, it consists of 4424 records with 35 features.
 
 The prediction problem is formulated as a three-category classification task, which assesses, based on socio-economic data and performance metrics during the academic years, whether a student will:
 
@@ -363,40 +363,83 @@ boxplot(train$Age.at.enrollment ~ train$Output)
 ```
 
 ### Part3: exploratory data analysis
-```{r}
-str(data)
-col_grad <- c('red', 'darkgreen')
-barplot(table(data$Output), 
-        col = col_grad)
-barplot(as.matrix(prop.table(table(data$Marital.status))), 
-        horiz = T)
-barplot(as.matrix((table(data$Output, data$Marital.status))), 
-        beside = T,
-        horiz = T, 
-        legend = T, 
-        col = col_grad, 
-        las = 2)
-barplot(table(data$Course, 
-              data$Output), 
-        horiz = T, 
-        beside = T, 
-        col = col_grad)
-barplot(table(data$Output, 
-              data$Previous.qualification), 
-        horiz = T, 
-        beside = T, 
-        col = col_grad)
-barplot(table(data$Output, 
-              data$Nacionality), 
-        horiz = T, 
-        beside = T, 
-        col = col_grad)
+
+| Marital.status        | Freq |       | Course                | Freq |
+|:----------------------|-----:|-------|:----------------------|-----:|
+| Single                | 3919 |       | No Stem               | 2702 |
+| Married               |  379 |       | Stem                  | 1722 |
+| Others                |  126 |       |                       |      |
+
+| Previous.qualification | Freq |       | Nationality    | Freq |
+|:-----------------------|-----:|-------|:---------------|-----:|
+| Higher                 |  204 |       | Portoguese     | 4314 |
+| No Secondary           |  232 |       | Others         |  110 |
+| Secondary              | 3988 |       |                |      |
+
+| Mother.s.qualification | Freq |       | Father.s.qualification | Freq |
+|:-----------------------|-----:|-------|:-----------------------|-----:|
+| Higher                 |  591 |       | Higher                 |  415 |
+| No Secondary           |  234 |       | No Secondary           |3076 |
+| Secondary              | 3599 |       | Secondary              |  933 |
+
+| Mother.s.occupation | Freq |       | Father.s.occupation | Freq |
+|:--------------------|-----:|-------|:--------------------|-----:|
+| Blue Collar         | 2004 |       | Blue Collar         | 2567 |
+| Others              |  231 |       | Others              |  212 |
+| White Collar        | 2189 |       | White Collar        | 1645 |
+
+| Displaced | Freq |       | Educational.special.needs | Freq |
+|:----------|-----:|-------|:---------------------------|-----:|
+| 0         | 1998 |       | 0                           | 4373 |
+| 1         | 2426 |       | 1                           |   51 |
+
+| Debtor | Freq |       | Tuition.fees.up.to.date | Freq |
+|:-------|-----:|-------|:-------------------------|-----:|
+| 0      | 3921 |       | 0                         |  528 |
+| 1      |  503 |       | 1                         | 3896 |
+-----------------       -----------------------------
+| Gender | Freq |       | Scholarship.holder | Freq |
+|:-------|-----:|-------|:-------------------|-----:|
+| Female | 2868 |       | 0                  | 3325 |
+| Male   | 1556 |       | 1                  | 1099 |
+
+| Output   | Freq |
+|:---------|-----:|
+| Dropout  | 2215 |
+| Graduate | 2209 |
+
+| Marital.status        | Freq |       | Course                | Freq |
+|:----------------------|-----:|       |:----------------------|-----:|
+| Single                | 3919 |       | No Stem               | 2702 |
+| Married               |  379 |       | Stem                  | 1722 |
+| Others                |  126 |       |                       |      |
+
+---------------------------------------------------------------
+
+| Previous.qualification | Freq |       | Nationality    | Freq |
+|:-----------------------|-----:|      |:---------------|-----:|
+| Higher                 |  204 |       | Portoguese     | 4314 |
+| No Secondary           |  232 |       | Others         |  110 |
+| Secondary              | 3988 |       |                |      |
 
 
-############
-outl <- c(1858, 2406, 2984, 3472, 3677)
-index_train <- rownames(train)
-train[c(which(index_train %in% outl), 3), ]
+```{r,include=FALSE}
+
+library(knitr)
+
+categorical_cols <- names(data)[sapply(data, is.factor)]
+
+print_contingency_tables <- function(data, categorical_columns) {
+  for (column in categorical_columns) {
+    cat("\n Contingency Table for", column, "\n\n")
+    contingency_table <- table(data[[column]])
+    names(contingency_table) <- paste(column, names(contingency_table), sep = " = ")
+    print(kable(contingency_table, caption = paste("Contingency Table for", column), align = 'c',col.names = c(column,"freq")))
+  }
+}
+
+print_contingency_tables(data, categorical_cols)
+
+
 ```
-
 
