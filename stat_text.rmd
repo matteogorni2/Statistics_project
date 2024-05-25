@@ -2,6 +2,13 @@
 title: "Stat_text"
 output: pdf_document
 date: "2024-05-23"
+header-includes:
+  - \usepackage{graphicx}
+  - \usepackage{float}
+  - \usepackage{booktabs}
+  - \usepackage{caption}
+  - \usepackage{subcaption}
+---
 ---
 
 ### 1. Obtaining the Data
@@ -362,13 +369,15 @@ while(abs(max_age_drop) != Inf |
 boxplot(train$Age.at.enrollment ~ train$Output)
 ```
 
-### Part3: exploratory data analysis
+### 3. Exploratory Data Analysis
 
-| Marital.status        | Freq |       | Course                | Freq |
-|:----------------------|-----:|-------|:----------------------|-----:|
-| Single                | 3919 |       | No Stem               | 2702 |
-| Married               |  379 |       | Stem                  | 1722 |
-| Others                |  126 |       |                       |      |
+We are now going to plot our categorical an numerical variables...
+
+| Marital.status        | Freq || Course                | Freq |
+|:----------------------|-----:||:----------------------|-----:|
+| Single                | 3919 || No Stem               | 2702 |
+| Married               |  379 || Stem                  | 1722 |
+| Others                |  126 ||                       |      |
 
 | Previous.qualification | Freq |       | Nationality    | Freq |
 |:-----------------------|-----:|-------|:---------------|-----:|
@@ -408,21 +417,6 @@ boxplot(train$Age.at.enrollment ~ train$Output)
 | Dropout  | 2215 |
 | Graduate | 2209 |
 
-| Marital.status        | Freq |       | Course                | Freq |
-|:----------------------|-----:|       |:----------------------|-----:|
-| Single                | 3919 |       | No Stem               | 2702 |
-| Married               |  379 |       | Stem                  | 1722 |
-| Others                |  126 |       |                       |      |
-
----------------------------------------------------------------
-
-| Previous.qualification | Freq |       | Nationality    | Freq |
-|:-----------------------|-----:|      |:---------------|-----:|
-| Higher                 |  204 |       | Portoguese     | 4314 |
-| No Secondary           |  232 |       | Others         |  110 |
-| Secondary              | 3988 |       |                |      |
-
-
 ```{r,include=FALSE}
 
 library(knitr)
@@ -441,5 +435,341 @@ print_contingency_tables <- function(data, categorical_columns) {
 print_contingency_tables(data, categorical_cols)
 
 
+
+
+
 ```
+```{r}
+
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(kableExtra)
+library(htmltools)
+```
+
+
+```{r}
+
+# Example data for other tables
+prev_qual <- data.frame(
+  `Previous.qualification` = c("Higher", "No Secondary", "Secondary"),
+  Freq = c(204, 232, 3988)
+)
+
+nat_qual <- data.frame(
+  Nationality = c("Portuguese", "Others"),
+  Freq = c(4314, 110)
+)
+
+mother_qual <- data.frame(
+  `Mother's qualification` = c("Higher", "No Secondary", "Secondary"),
+  Freq = c(591, 234, 3599)
+)
+
+father_qual <- data.frame(
+  `Father's qualification` = c("Higher", "No Secondary", "Secondary"),
+  Freq = c(415, 3076, 933)
+)
+
+# Creating tables
+prev_qual_table <- kable(prev_qual, caption = "Previous Qualification", format = "latex", booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "hold_position"))
+
+nat_qual_table <- kable(nat_qual, caption = "Nationality", format = "latex", booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "hold_position"))
+
+mother_qual_table <- kable(mother_qual, caption = "Mother's Qualification", format = "latex", booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "hold_position"))
+
+father_qual_table <- kable(father_qual, caption = "Father's Qualification", format = "latex", booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "hold_position"))
+
+# Print tables side by side
+cat(paste0(
+  "\\begin{table}[H]\n",
+  "\\begin{subtable}[t]{0.45\\textwidth}\n", prev_qual_table, "\\end{subtable}\n",
+  "\\hfill\n",
+  "\\begin{subtable}[t]{0.45\\textwidth}\n", nat_qual_table, "\\end{subtable}\n",
+  "\\hfill\n",
+  "\\begin{subtable}[t]{0.45\\textwidth}\n", mother_qual_table, "\\end{subtable}\n",
+  "\\hfill\n",
+  "\\begin{subtable}[t]{0.45\\textwidth}\n", father_qual_table, "\\end{subtable}\n",
+  "\\caption{Additional Example Tables}\n",
+  "\\end{table}\n"
+))
+
+
+```
+### 4. Model building
+We will now try to build different models using the training set,the models we will use include logistic regression, linear discriminant analysis (LDA), quadratic discriminant analysis (QDA), ridge regression, and lasso regression.
+
+This project encompasses a step-by-step approach to model implementation, evaluation, and comparison, utilizing libraries such as `MASS`, `glmnet`, and `class` for model fitting, prediction, and performance assessment.
+
+In the following section we will build the models one by one and briefly talk about which insights tey offer, a more detailed discussion will be in the following section
+
+
+**Logistic Regression**
+One of the first model we decide to employ is logistic regression, this seems like an obvious choice given the fact that our research question revolves around finding a probability in a binary classification task.
+
+The core idea behind logistic regression is to model the relationship between one or more independent variables (features) and a binary dependent variable (outcome) using the logistic function. This function maps the output of a linear combination of the features to a probability score between 0 and 1.
+
+In logistic regression, the coefficients associated with each feature are estimated using maximum likelihood estimation. These coefficients represent the impact of each feature on the log-odds of the outcome variable.
+```{r,include=FALSE}
+## Models (Poi questa parte si farà con il train e test)
+fit1 <- glm(Output ~ ., 
+            family = binomial, 
+            data = data)
+summary(fit1)
+# fit2 <- update(fit1, 
+#                .~. - Application.order - 
+#                  International - 
+#                  Nacionality - 
+#                  Father.s.qualification - 
+#                  Father.s.occupation - 
+#                  Displaced - 
+#                  Mother.s.qualification - 
+#                  Mother.s.occupation - 
+#                  Age.at.enrollment - 
+#                  Inflation.rate)
+
+fit2 <- step(fit1, 
+             direction = 'backward')
+summary(fit2)
+anova(fit2, fit1)
+
+table(data$Output, round(fitted(fit2)))
+prop.table(table(data$Output, round(fitted(fit2)))) %>% 
+  diag %>% sum # 68%
+
+# ROC
+library(pROC)
+
+logistic_prob <- fitted(fit2, type = 'response')
+roc_out <- roc(data$Output, logistic_prob, levels=c("Dropout", 
+                                                    "Graduate"))
+
+# different ways of plotting the ROC curve
+plot(roc_out) # check values on the x axis
+
+# legacy.axes=TRUE   1 - specificity on the x axis
+plot(roc_out, legacy.axes=TRUE)
+
+# compute AUC = Area Under the Curve
+plot(roc_out,  print.auc=TRUE, legacy.axes=TRUE, xlab="False Positive Rate", ylab="True Positive Rate")
+auc(roc_out)
+
+# specificity (TNR) and sensitivity (TPR) for a given threshold
+coords(roc_out, 0.5)
+
+coords(roc_out, seq(0.1, 0.9, by=0.1))
+
+# threshold that maximizes the sum of specificity (TNR) and sensitivity (TPR)
+coords(roc_out, "best")
+
+
+table(data$Output, 
+      data$Marital.status) %>% 
+  prop.table() %>%  
+  barplot(beside = T, 
+          legend.text = T, 
+          args.legend = list(x = "topleft", 
+                             bty = "n"))
+
+```
+
+```{r,results='hide'}
+######################################
+# Logistic Regression
+######################################
+fit1 <- glm(Output ~ ., 
+            family = binomial, 
+            data = train)
+summary(fit1)
+fit2 <- step(fit1, 
+             direction = 'backward')
+summary(fit2)
+```
+
+
+| Variable             | Estimate | Std. Error | z value |Pr(>|z|) |
+|----------------------|----------|------------|---------|----------|
+| (Intercept)          | 3.38052  | 0.80612    | 4.194   | 2.75e-05 *** |
+| Marital_Married      | 0.08176  | 0.46760    | 0.175   | 0.861201    |
+| Marital_Others       | -1.74991 | 0.93198    | -1.878  | 0.060432 .  |
+| Course_Stem          | 0.26065  | 0.09506    | 2.742   | 0.006106 ** |
+| Prev_NoSecondary     | -13.54671| 235.71280  | -0.057  | 0.954170    |
+| Prev_Secondary       | -0.09158 | 0.45666    | -0.201  | 0.841058    |
+| Nationality_Others   | 0.46162  | 0.31499    | 1.466   | 0.142780    |
+| Mother_NoSecondary   | -0.27751 | 0.26401    | -1.051  | 0.293192    |
+| Mother_Secondary     | 0.16344  | 0.12751    | 1.282   | 0.199913    |
+| Debtor               | -0.84311 | 0.18519    | -4.553  | 5.30e-06 *** |
+| Tuition_Paid         | 2.28948  | 0.26585    | 8.612   | < 2e-16  *** |
+| Gender_Male          | -0.65291 | 0.09854    | -6.626  | 3.45e-11 *** |
+| Scholarship          | 1.21674  | 0.11197    | 10.867  | < 2e-16  *** |
+| Age_Enrollment       | -0.31217 | 0.02527    | -12.352 | < 2e-16  *** |
+| Unemployment_Rate    | 0.05150  | 0.01865    | 2.761   | 0.005769 ** |
+| GDP                  | 0.08171  | 0.02177    | 3.754   | 0.000174 *** |
+
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+
+
+```{r}
+par(mfrow = c(2, 2))
+plot(fit2)
+par(mfrow = c(1, 1))
+```
+
+
+```{r}
+# Qui diocane(TOGLIERE QUESTO COMMENTO DOPO)
+pred_logit <- predict(fit2, 
+                      newdata = test, 
+                      type = 'response')
+roc_out_logit <- roc(test$Output ~ pred_logit, 
+                     levels = c('Dropout', 'Graduate'))
+plot(roc_out_logit,  
+     print.auc=TRUE, 
+     legacy.axes=TRUE, 
+     xlab="False Positive Rate", 
+     ylab="True Positive Rate")
+auc(roc_out_logit)
+```
+
+
+QUI METTERE QUALCOSA SU COME GESTIRE GLI OUTLIERS IN QUESTI MODELLI
+
+***Linear Discriminant Analysis (LDA)***
+
+LDA is a classic statistical technique utilized in machine learning and pattern recognition for classification tasks. We employ it to identify which linear combination of features best separates multiple classes or categories in our dataset.
+
+At its core, LDA operates under the assumption that the data can be represented as multivariate Gaussian distributions and that the classes share the same covariance matrix. It seeks to find a projection of the data onto a lower-dimensional space while maximizing the separation between classes and minimizing the variance within each class.
+
+One of the key advantages of LDA is its simplicity and interpretability. The resulting linear discriminant functions provide insights into how different features contribute to the classification decision. Additionally, LDA is robust when the assumptions regarding the data distribution are met, making it a reliable choice for many classification problems.
+
+In practice, LDA is often used in conjunction with other techniques for data exploration, classification, and feature extraction. It finds applications in diverse fields such as finance, biology, and image processing, where the goal is to effectively differentiate between multiple classes based on available features.
+
+
+```{r,results='hide'}
+######################################
+# Linear Discriminant Analysis (LDA)
+######################################
+
+library(MASS)
+lda_fit <- lda(Output ~ ., 
+               data = train)
+lda_fit
+```
+
+
+```{r,eval=FALSE}
+# plot the values of the discriminant function for the two groups
+# 
+plot(lda_fit, 
+     type="histogram")
+plot(lda_fit) # histogram is the default value
+plot(lda_fit, type="density")
+```
+
+
+```{r,include=FALSE}
+plot(lda_fit, type="both")
+
+
+pred_lda <- predict(lda_fit, 
+                    newdata = test, 
+                    type = 'response')
+roc_out_lda <- roc(test$Output ~ pred_lda$posterior[, 2], 
+                   levels = c('Dropout', 'Graduate'))
+```
+
+
+```{r}
+##auc(roc_out_lda)
+plot(roc_out_lda,  
+     print.auc=TRUE, 
+     legacy.axes=TRUE, 
+     xlab="False Positive Rate", 
+     ylab="True Positive Rate", 
+     main = 'LDA')
+
+
+```
+
+***Quadratic Discriminant Analysis (QDA)***
+Qda...
+```{r}
+######################################
+# Quadratic Discriminant Analysis (QDA)
+######################################
+
+
+
+```
+
+### appendix A: Dataset
+
+```{r echo=FALSE, message=FALSE}
+# Load necessary library
+library(knitr)
+
+# Create a data frame that represents your dataset
+data <- data.frame(
+  Variable = c("Marital status", "Application mode", "Application order", "Course", 
+               "evening attendance", "Displaced", "Educational special needs", 
+               "Debtor", "Tuition fees up to date", "Gender", "Scholarship holder", 
+               "Age at enrollment", "International", "Curricular units 1st sem (credited)", 
+               "Curricular units 1st sem (enrolled)", "Curricular units 1st sem (evaluations)", 
+               "Curricular units 1st sem (approved)", "Curricular units 1st sem (grade)", 
+               "Curricular units 1st sem (without evaluations)", "Curricular units 2nd sem (credited)", 
+               "Curricular units 2nd sem (enrolled)", "Curricular units 2nd sem (evaluations)", 
+               "Curricular units 2nd sem (approved)", "Curricular units 2nd sem (grade)", 
+               "Curricular units 2nd sem (without evaluations)", "Unemployment rate", 
+               "Inflation rate", "GDP", "output", "Previous qualification",
+               "Nationality", "Mother's qualification", "Father's qualification",
+               "Mother's occupation", "Father's occupation"),
+  Description = c("Categorical variable indicating the marital status of the individual",
+                  "Categorical variable indicating the mode of application",
+                  "Numeric variable indicating the order of application",
+                  "Categorical variable indicating the chosen course",
+                  "Binary variable indicating whether the individual attends classes during the daytime or evening",
+                  "Binary variable indicating whether the individual has been displaced",
+                  "Binary variable indicating whether the individual has educational special needs",
+                  "Binary variable indicating whether the individual is a debtor",
+                  "Binary variable indicating whether the tuition fees are up to date",
+                  "Binary variable indicating the gender of the individual",
+                  "Binary variable indicating whether the individual holds a scholarship",
+                  "Numeric variable indicating the age of the individual at the time of enrollment",
+                  "Binary variable indicating whether the individual is international",
+                  "Numeric variable indicating the number of credited curricular units in the 1st semester",
+                  "Numeric variable indicating the number of enrolled curricular units in the 1st semester",
+                  "Numeric variable indicating the number of evaluations for curricular units in the 1st semester",
+                  "Numeric variable indicating the number of approved curricular units in the 1st semester",
+                  "Numeric variable indicating the average grade for curricular units in the 1st semester",
+                  "Numeric variable indicating the number of curricular units in the 1st semester without evaluations",
+                  "Numeric variable indicating the number of credited curricular units in the 2nd semester",
+                  "Numeric variable indicating the number of enrolled curricular units in the 2nd semester",
+                  "Numeric variable indicating the number of evaluations for curricular units in the 2nd semester",
+                  "Numeric variable indicating the number of approved curricular units in the 2nd semester",
+                  "Numeric variable indicating the average grade for curricular units in the 2nd semester",
+                  "Numeric variable indicating the number of curricular units in the 2nd semester without evaluations",
+                  "Variable indicating the unemployment rate (Unemployment rate (%))",
+                  "Numeric variable indicating the inflation rate (Inflation rate (%))",
+                  "Numeric variable indicating the Gross Domestic Product",
+                  "Categorical variable indicating the target variable (e.g., Dropout, Graduate, Enrolled)",
+                  "Numeric variable indicating the level of the previous qualification",
+                  "Categorical variable indicating the nationality of the individual",
+                  "Numeric variable indicating the level of the mother's qualification",
+                  "Numeric variable indicating the level of the father's qualification",
+                  "Categorical variable indicating the mother's occupation",
+                  "Categorical variable indicating the father's occupation")
+)
+
+# Create the table using kable
+kable(data, col.names = c("Variable", "Description"), align = c('l', 'l'), caption = "Dataset Description")
+```
+
+
+```
+
 
