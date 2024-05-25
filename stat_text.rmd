@@ -379,23 +379,23 @@ We are now going to plot our categorical an numerical variables...
 | Married               |  379 || Stem                  | 1722 |
 | Others                |  126 ||                       |      |
 
-| Previous.qualification | Freq |       | Nationality    | Freq |
-|:-----------------------|-----:|-------|:---------------|-----:|
-| Higher                 |  204 |       | Portoguese     | 4314 |
-| No Secondary           |  232 |       | Others         |  110 |
-| Secondary              | 3988 |       |                |      |
+| Previous.qualification | Freq || Nationality    | Freq |
+|:-----------------------|-----:||:---------------|-----:|
+| Higher                 |  204 || Portoguese     | 4314 |
+| No Secondary           |  232 || Others         |  110 |
+| Secondary              | 3988 ||                |      |
 
-| Mother.s.qualification | Freq |       | Father.s.qualification | Freq |
-|:-----------------------|-----:|-------|:-----------------------|-----:|
-| Higher                 |  591 |       | Higher                 |  415 |
-| No Secondary           |  234 |       | No Secondary           |3076 |
-| Secondary              | 3599 |       | Secondary              |  933 |
+| Mother.s.qualification | Freq || Father.s.qualification | Freq |
+|:-----------------------|-----:||:-----------------------|-----:|
+| Higher                 |  591 || Higher                 |  415 |
+| No Secondary           |  234 || No Secondary           |3076 |
+| Secondary              | 3599 || Secondary              |  933 |
 
-| Mother.s.occupation | Freq |       | Father.s.occupation | Freq |
-|:--------------------|-----:|-------|:--------------------|-----:|
-| Blue Collar         | 2004 |       | Blue Collar         | 2567 |
-| Others              |  231 |       | Others              |  212 |
-| White Collar        | 2189 |       | White Collar        | 1645 |
+| Mother.s.occupation | Freq || Father.s.occupation | Freq |
+|:--------------------|-----:||:--------------------|-----:|
+| Blue Collar         | 2004 || Blue Collar         | 2567 |
+| Others              |  231 || Others              |  212 |
+| White Collar        | 2189 || White Collar        | 1645 |
 
 | Displaced | Freq |       | Educational.special.needs | Freq |
 |:----------|-----:|-------|:---------------------------|-----:|
@@ -448,58 +448,7 @@ library(htmltools)
 ```
 
 
-```{r}
 
-# Example data for other tables
-prev_qual <- data.frame(
-  `Previous.qualification` = c("Higher", "No Secondary", "Secondary"),
-  Freq = c(204, 232, 3988)
-)
-
-nat_qual <- data.frame(
-  Nationality = c("Portuguese", "Others"),
-  Freq = c(4314, 110)
-)
-
-mother_qual <- data.frame(
-  `Mother's qualification` = c("Higher", "No Secondary", "Secondary"),
-  Freq = c(591, 234, 3599)
-)
-
-father_qual <- data.frame(
-  `Father's qualification` = c("Higher", "No Secondary", "Secondary"),
-  Freq = c(415, 3076, 933)
-)
-
-# Creating tables
-prev_qual_table <- kable(prev_qual, caption = "Previous Qualification", format = "latex", booktabs = TRUE) %>%
-  kable_styling(latex_options = c("striped", "hold_position"))
-
-nat_qual_table <- kable(nat_qual, caption = "Nationality", format = "latex", booktabs = TRUE) %>%
-  kable_styling(latex_options = c("striped", "hold_position"))
-
-mother_qual_table <- kable(mother_qual, caption = "Mother's Qualification", format = "latex", booktabs = TRUE) %>%
-  kable_styling(latex_options = c("striped", "hold_position"))
-
-father_qual_table <- kable(father_qual, caption = "Father's Qualification", format = "latex", booktabs = TRUE) %>%
-  kable_styling(latex_options = c("striped", "hold_position"))
-
-# Print tables side by side
-cat(paste0(
-  "\\begin{table}[H]\n",
-  "\\begin{subtable}[t]{0.45\\textwidth}\n", prev_qual_table, "\\end{subtable}\n",
-  "\\hfill\n",
-  "\\begin{subtable}[t]{0.45\\textwidth}\n", nat_qual_table, "\\end{subtable}\n",
-  "\\hfill\n",
-  "\\begin{subtable}[t]{0.45\\textwidth}\n", mother_qual_table, "\\end{subtable}\n",
-  "\\hfill\n",
-  "\\begin{subtable}[t]{0.45\\textwidth}\n", father_qual_table, "\\end{subtable}\n",
-  "\\caption{Additional Example Tables}\n",
-  "\\end{table}\n"
-))
-
-
-```
 ### 4. Model building
 We will now try to build different models using the training set,the models we will use include logistic regression, linear discriminant analysis (LDA), quadratic discriminant analysis (QDA), ridge regression, and lasso regression.
 
@@ -578,6 +527,19 @@ table(data$Output,
 ```
 
 ```{r,results='hide'}
+index_age <- which(abs(scale(train$Age.at.enrollment)) > 2)
+index_unemployment <- which(abs(scale(train$Unemployment.rate)) > 2)
+index_inflation <- which(abs(scale(train$Inflation.rate)) > 2)
+index_gdp <- which(abs(scale(train$GDP)) > 2)
+index_outliers <- unique(c(index_age, 
+                           index_unemployment, 
+                           index_inflation, 
+                           index_gdp))
+train <- train[-index_outliers, ]
+```
+
+
+```{r,results='hide'}
 ######################################
 # Logistic Regression
 ######################################
@@ -632,12 +594,13 @@ plot(roc_out_logit,
      print.auc=TRUE, 
      legacy.axes=TRUE, 
      xlab="False Positive Rate", 
-     ylab="True Positive Rate")
+     ylab="True Positive Rate",
+     main="Logistic Regression")
 auc(roc_out_logit)
 ```
 
 
-QUI METTERE QUALCOSA SU COME GESTIRE GLI OUTLIERS IN QUESTI MODELLI
+
 
 ***Linear Discriminant Analysis (LDA)***
 
@@ -703,6 +666,127 @@ Qda...
 # Quadratic Discriminant Analysis (QDA)
 ######################################
 
+
+
+```
+
+***Ridge Regression***
+
+Ridge regression is a regularization technique used in linear regression to mitigate the issues of multicollinearity and overfitting: it can be used to work with high dimensional data, which is why we find it valuable in our case
+```{r}
+###########################
+# Ridge Regression
+###########################
+
+library(glmnet)
+
+
+design_matrix_train <- model.matrix(Output ~ .,
+                                    data = train)
+
+design_matrix_test <- model.matrix(Output ~ .,
+                                   data = test)
+
+# Adattamento del modello Ridge con regressione Binomiale
+ridge_model <- glmnet(x = design_matrix_train, 
+                      y = train$Output,
+                      alpha = 0, 
+                      intercept = F, 
+                      family = "binomial")
+# Find the best lambda
+
+predictions <- predict(ridge_model, 
+                       newx = design_matrix_test, 
+                       type = 'response')
+##########################
+
+accuracies <- c()
+
+for (i in 1:ncol(predictions)) {
+  predicted_classes <- round(predictions[, i])
+  confusion_matrix <- table(predicted_classes, test$Output)
+  accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+  accuracies <- c(accuracies, accuracy)
+}
+
+best_lambda_index <- which.max(accuracies)
+ridge_pred <- matrix(predictions[, best_lambda_index], 
+                     ncol = 1)
+best_accuracy <- accuracies[best_lambda_index]
+
+colnames(ridge_pred) <- 'ridge_pred'
+
+
+roc_out_ridge <- roc(test$Output ~ as.numeric(ridge_pred), 
+                     levels = c('Dropout', 'Graduate'))
+plot(roc_out_ridge,  
+     print.auc=TRUE, 
+     legacy.axes=TRUE, 
+     xlab="False Positive Rate", 
+     ylab="True Positive Rate", 
+     main = 'Ridge Regression')
+auc(roc_out_ridge)
+
+```
+
+***Lasso Regression***
+
+This regression techniques takes a slightly different approach by adding a penalty term that penalizes the absolute values of the regression coefficients, instead of their squares (which is what Rigde regression does).
+
+This penalty term encourages sparsity in the coefficient vector, effectively driving some coefficients to exactly zero. As a result, Lasso regression not only helps in shrinking coefficient values but also performs variable selection by automatically excluding irrelevant features from the model.
+```{r}
+###########################
+# Lasso Regression
+###########################
+
+# Adattamento del modello Lasso con regressione Binomiale
+lasso_model <- glmnet(x = design_matrix_train, 
+                      y = train$Output,
+                      alpha = 1, 
+                      intercept = F, 
+                      family = "binomial")
+# Find the best lambda
+
+predictions <- predict(lasso_model, 
+                       newx = design_matrix_test, 
+                       type = 'response')
+##########################
+
+accuracies <- c()
+
+for (i in 1:ncol(predictions)) {
+  predicted_classes <- round(predictions[, i])
+  confusion_matrix <- table(predicted_classes, test$Output)
+  accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+  accuracies <- c(accuracies, accuracy)
+}
+
+best_lambda_index <- which.max(accuracies)
+lasso_pred <- matrix(predictions[, best_lambda_index], 
+                     ncol = 1)
+best_accuracy <- accuracies[best_lambda_index]
+
+colnames(lasso_pred) <- 'lasso_pred'
+
+
+roc_out_lasso <- roc(test$Output ~ as.numeric(lasso_pred), 
+                     levels = c('Dropout', 'Graduate'))
+plot(roc_out_lasso,  
+     print.auc=TRUE, 
+     legacy.axes=TRUE, 
+     xlab="False Positive Rate", 
+     ylab="True Positive Rate", 
+     main = 'Lasso regression')
+auc(roc_out_lasso)
+
+##à DA vedere se lancia
+# add labels to identify the variables
+plot(ridge_model, xvar="lambda", label=TRUE)
+
+plot(ridge_model, xvar = "norm", label=TRUE)
+plot(ridge_model, xvar = "dev",  label=TRUE)
+
+plot(ridge_model, xvar = 'norm')
 
 
 ```
