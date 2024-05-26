@@ -1,6 +1,6 @@
 ---
 title: "Stat_text"
-output: pdf_document
+output: html_document
 date: "2024-05-23"
 header-includes:
   - \usepackage{graphicx}
@@ -47,6 +47,7 @@ data$Output[index_enrolled] <- 'Dropout'
 ```
 
 ```{r, include=FALSE}
+library(knitr)
 # Rimuoviamo le variabili Curricular
 data <- data[, -c(20:31)]
 # Dato che raggruppiamo i corsi non c'interessa quali siano serali
@@ -79,11 +80,10 @@ Marital status
 
 Categorical variable indicating the marital status of the individual.
 We only have 4 widowers and 6 legally separated instances, therefore we collapsed them under the variable 'Others', we also decided to merge 'divorced' and 'legally separated' since the difference between the two instances is not relevant for our analysis.
-```{r,results='hide'}
+```{r,echo=FALSE}
 ## Marital status
 #1 – single 2 – married 3 – widower 4-divorced 5 de-facto union 6–legally separated)
 
-table(data$Marital.status)
 
 
 index_single <- which(data$Marital.status == 1) # Single
@@ -91,6 +91,9 @@ index_married <- which(data$Marital.status == 2) # Married
 data$Marital.status[index_single] <- 'Single'
 data$Marital.status[index_married] <- 'Married'
 data$Marital.status[-c(index_single, index_married)] <- 'Others'
+
+cat("Modified marital status \n")
+table(data$Marital.status)
 ```
 
 
@@ -99,9 +102,8 @@ data$Marital.status[-c(index_single, index_married)] <- 'Others'
 Mother/Father occupation
 
 Categorical variables indicating the mother and father occupation respectively, while the original dataset had 32 labels for all kinds of different jobs, we decided to merge some of the labels and make this a 3-label categorical variable. Jobs were split based on a White/Blue collar distinction, as shown in the table below.
-```{r,results='hide'}
+```{r,echo=FALSE}
 ## Mother's occupation
-table(data$Mother.s.occupation)
 # Split in white / blue collar
 index_m_no_worker <- which(data$Mother.s.occupation == 1| # Student
                              data$Mother.s.occupation == 12 | # Other
@@ -130,6 +132,9 @@ data$Mother.s.occupation[index_m_white] <- 'White Collar'
 data$Mother.s.occupation[-c(index_m_no_worker, 
                             index_m_white)] <- 'Blue Collar'
 
+cat("Modified Mother's occupation \n")
+table(data$Mother.s.occupation)
+
 ```
 
 
@@ -139,9 +144,9 @@ Mother/Father/student education
 
 Categorical variable indicating the level of each parents’ qualification as well as the student's.
 Again, we are dealing with many categorical variables, so we decided to merge them based on whether they have an completed an higher education cycle and if they have finished high school or not
-```{r,results='hide'}
+```{r,echo=FALSE}
 ## Mother's qualification
-table(data$Mother.s.qualification)
+
 index_m_secondary <- which(data$Mother.s.qualification == 1 | 
                              data$Mother.s.qualification == 6 |
                              data$Mother.s.qualification == 13 |
@@ -164,11 +169,14 @@ data$Mother.s.qualification[-c(index_m_secondary,
                                index_m_higher)] <- 'No Secondary'
 
 
+# Print the modified column
+cat("Modified Mother's qualification \n")
+print(table(data$Mother.s.qualification))
+
 ```
 
 ```{r,include=FALSE}
 ## Father's occupation
-table(data$Father.s.occupation)
 # Slpit in white / blue collar
 index_f_no_worker <- which(data$Father.s.occupation == 1| # Student
                              data$Father.s.occupation == 12 | #Other
@@ -193,6 +201,7 @@ index_f_white <- which(data$Father.s.occupation == 2 |
                          data$Father.s.occupation == 28 |
                          data$Father.s.occupation == 29)
 data$Father.s.occupation[index_f_no_worker] <- 'Others'
+table(data$Father.s.occupation)
 data$Father.s.occupation[index_f_white] <- 'White Collar'
 data$Father.s.occupation[-c(index_f_no_worker, 
                             index_f_white)] <- 'Blue Collar'
@@ -260,7 +269,6 @@ Courses
 Categorical variable representing the course chosen at enrollment, we originally had 17 different courses, we decided to relabel the courses using whether they are STEM subjects or not as a splitting criterion
 ```{r,results='hide'}
 ## Course
-table(data$Course)
 index_stem <- which(data$Course == 1 |
                       data$Course == 4 |
                       data$Course == 6 |
@@ -270,6 +278,9 @@ index_stem <- which(data$Course == 1 |
                       data$Course == 13)
 data$Course[index_stem] <- 'Stem'
 data$Course[-index_stem] <- 'No Stem'
+
+cat("Modified course \n")
+table(data$Course)
 ```
 
 Nationality:
@@ -326,7 +337,7 @@ We decided to remove some features from our data (non mi viene cosa scrivere ora
 
 **OUTLIERS DETECTION AND REMOVAL**
 
-We looked for outliers among numerical features in our data, 'age at enrollment' was the only one that presented some. We decided to perform a train-test split before removing the outliers from the training set only: keeping outliers in the test set improves the ecological validity of the model and reduces overfitting.
+We looked for outliers among numerical features in our data, 'age at enrollment' was the only one that presented some.Our chosen method of outliers removal consists of removing all values which are not within 2 standards deviation from the mean.  We then perform a train-test split before and remove the outliers from the training set only: keeping outliers in the test set improves the ecological validity of the model and reduces overfitting.
 ```{r}
 # Train test split
 set.seed(71)
@@ -338,36 +349,28 @@ test <- data[-index, ]
 # outliers removal
 boxplot(train$Age.at.enrollment ~ train$Output)
 
+index_age <- which(abs(scale(train$Age.at.enrollment)) > 2)
+index_unemployment <- which(abs(scale(train$Unemployment.rate)) > 2)
+index_inflation <- which(abs(scale(train$Inflation.rate)) > 2)
+index_gdp <- which(abs(scale(train$GDP)) > 2)
+index_outliers <- unique(c(index_age, 
+                           index_unemployment, 
+                           index_inflation, 
+                           index_gdp))
+train <- train[-index_outliers, ]
+
 ```
 ```{r, echo=TRUE, fig.show='hide'}
-max_age_drop <- 1
-max_age_grad <- 1
-while(abs(max_age_drop) != Inf |
-      abs(max_age_grad) != Inf){
-  max_age_drop <- suppressWarnings(min(boxplot(train$Age.at.enrollment[train$Output == 'Dropout'])$out))
-  index_age_drop <- which(train$Age.at.enrollment >= max_age_drop &
-                            train$Output == 'Dropout')
-  max_age_grad <- suppressWarnings(min(boxplot(train$Age.at.enrollment[train$Output == 'Graduate'])$out))
-  index_age_grad <- which(train$Age.at.enrollment >= max_age_grad &
-                            train$Output == 'Graduate')
-  if(abs(max_age_drop) != Inf &
-     abs(max_age_grad) != Inf) {
-    train <- train[-c(index_age_drop, index_age_grad), ]
-  }
-  if(abs(max_age_drop) != Inf &
-     abs(max_age_grad) == Inf) {
-    train <- train[-c(index_age_drop), ]
-  }
-  if(abs(max_age_drop) == Inf &
-     abs(max_age_grad) != Inf) {
-    train <- train[-c(index_age_grad), ]
-  }
-}
+
 ```
 
 ```{r}
 boxplot(train$Age.at.enrollment ~ train$Output)
 ```
+
+
+
+
 
 ### 3. Exploratory Data Analysis
 
@@ -458,84 +461,15 @@ In the following section we will build the models one by one and briefly talk ab
 
 
 **Logistic Regression**
-One of the first model we decide to employ is logistic regression, this seems like an obvious choice given the fact that our research question revolves around finding a probability in a binary classification task.
+
+One of the first model we employ is logistic regression, this seems like an obvious choice given the fact that our research question revolves around finding a probability in a binary classification task.
 
 The core idea behind logistic regression is to model the relationship between one or more independent variables (features) and a binary dependent variable (outcome) using the logistic function. This function maps the output of a linear combination of the features to a probability score between 0 and 1.
 
 In logistic regression, the coefficients associated with each feature are estimated using maximum likelihood estimation. These coefficients represent the impact of each feature on the log-odds of the outcome variable.
 ```{r,include=FALSE}
-## Models (Poi questa parte si farà con il train e test)
-fit1 <- glm(Output ~ ., 
-            family = binomial, 
-            data = data)
-summary(fit1)
-# fit2 <- update(fit1, 
-#                .~. - Application.order - 
-#                  International - 
-#                  Nacionality - 
-#                  Father.s.qualification - 
-#                  Father.s.occupation - 
-#                  Displaced - 
-#                  Mother.s.qualification - 
-#                  Mother.s.occupation - 
-#                  Age.at.enrollment - 
-#                  Inflation.rate)
-
-fit2 <- step(fit1, 
-             direction = 'backward')
-summary(fit2)
-anova(fit2, fit1)
-
-table(data$Output, round(fitted(fit2)))
-prop.table(table(data$Output, round(fitted(fit2)))) %>% 
-  diag %>% sum # 68%
-
 # ROC
 library(pROC)
-
-logistic_prob <- fitted(fit2, type = 'response')
-roc_out <- roc(data$Output, logistic_prob, levels=c("Dropout", 
-                                                    "Graduate"))
-
-# different ways of plotting the ROC curve
-plot(roc_out) # check values on the x axis
-
-# legacy.axes=TRUE   1 - specificity on the x axis
-plot(roc_out, legacy.axes=TRUE)
-
-# compute AUC = Area Under the Curve
-plot(roc_out,  print.auc=TRUE, legacy.axes=TRUE, xlab="False Positive Rate", ylab="True Positive Rate")
-auc(roc_out)
-
-# specificity (TNR) and sensitivity (TPR) for a given threshold
-coords(roc_out, 0.5)
-
-coords(roc_out, seq(0.1, 0.9, by=0.1))
-
-# threshold that maximizes the sum of specificity (TNR) and sensitivity (TPR)
-coords(roc_out, "best")
-
-
-table(data$Output, 
-      data$Marital.status) %>% 
-  prop.table() %>%  
-  barplot(beside = T, 
-          legend.text = T, 
-          args.legend = list(x = "topleft", 
-                             bty = "n"))
-
-```
-
-```{r,results='hide'}
-index_age <- which(abs(scale(train$Age.at.enrollment)) > 2)
-index_unemployment <- which(abs(scale(train$Unemployment.rate)) > 2)
-index_inflation <- which(abs(scale(train$Inflation.rate)) > 2)
-index_gdp <- which(abs(scale(train$GDP)) > 2)
-index_outliers <- unique(c(index_age, 
-                           index_unemployment, 
-                           index_inflation, 
-                           index_gdp))
-train <- train[-index_outliers, ]
 ```
 
 
@@ -584,7 +518,7 @@ par(mfrow = c(1, 1))
 
 
 ```{r}
-# Qui diocane(TOGLIERE QUESTO COMMENTO DOPO)
+
 pred_logit <- predict(fit2, 
                       newdata = test, 
                       type = 'response')
@@ -665,6 +599,21 @@ Qda...
 ######################################
 # Quadratic Discriminant Analysis (QDA)
 ######################################
+qda_fit <- qda(Output ~ ., 
+               data = train)
+qda_fit
+pred_qda <- predict(qda_fit, 
+                    newdata = test, 
+                    type = 'response')
+roc_out_qda <- roc(test$Output ~ pred_qda$posterior[, 2], 
+                   levels = c('Dropout', 'Graduate'))
+plot(roc_out_qda,  
+     print.auc=TRUE, 
+     legacy.axes=TRUE, 
+     xlab="False Positive Rate", 
+     ylab="True Positive Rate", 
+     main = 'LDA')
+auc(roc_out_qda)
 
 
 
@@ -852,8 +801,3 @@ data <- data.frame(
 # Create the table using kable
 kable(data, col.names = c("Variable", "Description"), align = c('l', 'l'), caption = "Dataset Description")
 ```
-
-
-```
-
-
