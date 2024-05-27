@@ -267,7 +267,7 @@ Courses
 
 
 Categorical variable representing the course chosen at enrollment, we originally had 17 different courses, we decided to relabel the courses using whether they are STEM subjects or not as a splitting criterion
-```{r,results='hide'}
+```{r,echo=FALSE}
 ## Course
 index_stem <- which(data$Course == 1 |
                       data$Course == 4 |
@@ -286,13 +286,15 @@ table(data$Course)
 Nationality:
 
 categorical variable representing a students nationality: looking at the data we saw that while we had a lot of labels (one for each nationality), the vast majority of people were Portuguese, therefore we labeled data in the following way
-```{r,results='hide'}
+```{r,echo=FALSE}
 
 ## Nationality
-table(data$Nacionality)
+
 data$Nacionality[data$Nacionality != 1] <- 'Others' # just 2%
 data$Nacionality[data$Nacionality == 1] <- 'Portoguese'
 
+cat("Modified nationality \n")
+table(data$Nacionality)
 ```
 
 ```{r,include=FALSE}
@@ -374,51 +376,148 @@ boxplot(train$Age.at.enrollment ~ train$Output)
 
 ### 3. Exploratory Data Analysis
 
-We are now going to plot our categorical an numerical variables...
+In this section we will take a closer look at our data. First, we'll plot some contingency tables for our categorical variables. 
+TESTO PRESO DA CPT, BEPPE VEDI SE ALCUNE COSE HANNO SENSO
+Key Findings
+Among single students, the dropout rate is notably high with 1904 dropouts compared to 2015 graduates. This trend suggests that single students face challenges that significantly impact their ability to complete their studies. In contrast, married students exhibit a lower dropout rate (231) and a relatively modest number of graduates (148), indicating different dynamics at play in this group. Students with other marital statuses show much lower numbers overall, making it difficult to draw significant conclusions.
 
-| Marital.status        | Freq || Course                | Freq |
-|:----------------------|-----:||:----------------------|-----:|
-| Single                | 3919 || No Stem               | 2702 |
-| Married               |  379 || Stem                  | 1722 |
-| Others                |  126 ||                       |      |
+When examining course types, students enrolled in non-STEM courses exhibit substantial dropout (1333) and graduation (1309) rates. Those in STEM courses have fewer dropouts (822) and slightly more graduates (900), suggesting a marginally higher retention rate in STEM fields.
 
-| Previous.qualification | Freq || Nationality    | Freq |
-|:-----------------------|-----:||:---------------|-----:|
-| Higher                 |  204 || Portoguese     | 4314 |
-| No Secondary           |  232 || Others         |  110 |
-| Secondary              | 3988 ||                |      |
+The influence of prior qualifications is pronounced. Students with higher qualifications before enrollment show lower dropout numbers (124) and a smaller cohort of graduates (80). Conversely, those with only secondary education qualifications have the highest dropout (1922) and graduation (2066) rates, indicating a larger population and perhaps greater variability in outcomes.
 
-| Mother.s.qualification | Freq || Father.s.qualification | Freq |
-|:-----------------------|-----:||:-----------------------|-----:|
-| Higher                 |  591 || Higher                 |  415 |
-| No Secondary           |  234 || No Secondary           |3076 |
-| Secondary              | 3599 || Secondary              |  933 |
+Nationality plays a crucial role, with Portuguese students showing high numbers of both dropouts (2159) and graduates (2155), reflecting their dominant presence in the dataset. Other nationalities have significantly lower figures, with 56 dropouts and 54 graduates, suggesting different educational dynamics or smaller population sizes.
 
-| Mother.s.occupation | Freq || Father.s.occupation | Freq |
-|:--------------------|-----:||:--------------------|-----:|
-| Blue Collar         | 2004 || Blue Collar         | 2567 |
-| Others              |  231 || Others              |  212 |
-| White Collar        | 2189 || White Collar        | 1645 |
+Parental education appears influential. Students whose parents have secondary education show the highest numbers of both dropouts and graduates, pointing to the significant impact of secondary-level parental education. Higher parental education correlates with fewer dropouts but does not significantly boost graduate numbers.
 
-| Displaced | Freq |       | Educational.special.needs | Freq |
-|:----------|-----:|-------|:---------------------------|-----:|
-| 0         | 1998 |       | 0                           | 4373 |
-| 1         | 2426 |       | 1                           |   51 |
+Parental occupation also correlates with student outcomes. Students with blue-collar parents have higher dropout rates compared to those with white-collar parents. In particular, blue-collar fathers correlate with 1220 dropouts compared to 849 for white-collar fathers. The data suggests a connection between parental occupation and student success, with white-collar backgrounds associated with higher graduation rates.
 
-| Debtor | Freq |       | Tuition.fees.up.to.date | Freq |
-|:-------|-----:|-------|:-------------------------|-----:|
-| 0      | 3921 |       | 0                         |  528 |
-| 1      |  503 |       | 1                         | 3896 |
------------------       -----------------------------
-| Gender | Freq |       | Scholarship.holder | Freq |
-|:-------|-----:|-------|:-------------------|-----:|
-| Female | 2868 |       | 0                  | 3325 |
-| Male   | 1556 |       | 1                  | 1099 |
+Displacement status significantly affects outcomes. Displaced students have a much lower dropout rate (1113) and a higher graduation rate (1324) compared to their non-displaced peers, highlighting the effectiveness of support systems for displaced individuals.
 
-| Output   | Freq |
-|:---------|-----:|
-| Dropout  | 2215 |
-| Graduate | 2209 |
+Financial stability, indicated by up-to-date tuition fees and scholarship holding, plays a crucial role. Students with up-to-date tuition fees show higher graduation numbers (1810) compared to those with overdue fees (264 graduates). Scholarship holders, in particular, fare better with 1374 graduates compared to 1340 non-holders, and fewer dropouts (801 compared to 1507), underscoring the positive impact of financial aid on student retention and success.
+
+Gender differences are evident, with female students showing higher numbers of both dropouts (1207) and graduates (1681) compared to males (1008 dropouts and 548 graduates). This indicates a larger female student population and a higher success rate among females, pointing to gender-specific factors that influence educational outcomes.
+
+<div style="display: flex; flex-wrap: wrap;">
+
+<div style="flex: 1; min-width: 300px; padding: 10px;">
+### **Marital Status vs Output**
+|        | Dropout | Graduate | Sum |
+|--------|--------:|---------:|----:|
+| Single |    1904 |     2015 | 3919 |
+| Married|     231 |      148 |  379 |
+| Others |      80 |       46 |  126 |
+</div>
+
+<div style="flex: 1; min-width: 300px; padding: 10px;">
+### **Course vs Output**
+|        | Dropout | Graduate | Sum |
+|--------|--------:|---------:|----:|
+| No Stem|    1393 |     1309 | 2702 |
+| Stem   |     822 |      900 | 1722 |
+</div>
+
+<div style="flex: 1; min-width: 300px; padding: 10px;">
+### **Previous Qualification vs Output**
+|             | Dropout | Graduate | Sum |
+|-------------|--------:|---------:|----:|
+| Higher      |     124 |       80 |  204 |
+| No Secondary|     169 |       63 |  232 |
+| Secondary   |    1922 |     2066 | 3988 |
+</div>
+
+<div style="flex: 1; min-width: 300px; padding: 10px;">
+### **Nationality vs Output**
+|           | Dropout | Graduate | Sum |
+|-----------|--------:|---------:|----:|
+| Portuguese|    2159 |     2155 | 4314 |
+| Others    |      56 |       54 |  110 |
+</div>
+
+<div style="flex: 1; min-width: 300px; padding: 10px;">
+### **Mother's Qualification vs Output**
+|             | Dropout | Graduate | Sum |
+|-------------|--------:|---------:|----:|
+| Higher      |     319 |      272 |  591 |
+| No Secondary|     158 |       76 |  234 |
+| Secondary   |    1738 |     1861 | 3599 |
+</div>
+
+<div style="flex: 1; min-width: 300px; padding: 10px;">
+### **Father's Qualification vs Output**
+|             | Dropout | Graduate | Sum |
+|-------------|--------:|---------:|----:|
+| Higher      |     237 |      178 |  415 |
+| No Secondary|    1502 |     1574 | 3076 |
+| Secondary   |     476 |      457 |  933 |
+</div>
+
+<div style="flex: 1; min-width: 300px; padding: 10px;">
+### **Mother's Occupation vs Output**
+|             | Dropout | Graduate | Sum |
+|-------------|--------:|---------:|----:|
+| Blue Collar |     961 |     1043 | 2004 |
+| Others      |     166 |       65 |  231 |
+| White Collar|    1088 |     1101 | 2189 |
+</div>
+
+<div style="flex: 1; min-width: 300px; padding: 10px;">
+### **Father's Occupation vs Output**
+|             | Dropout | Graduate | Sum |
+|-------------|--------:|---------:|----:|
+| Blue Collar |    1220 |     1347 | 2567 |
+| Others      |     146 |       66 |  212 |
+| White Collar|     849 |      796 | 1645 |
+</div>
+
+<div style="flex: 1; min-width: 300px; padding: 10px;">
+### **Displaced vs Output**
+|   | Dropout | Graduate | Sum |
+|---|--------:|---------:|----:|
+| 0 |    1113 |      885 | 1998 |
+| 1 |    1102 |     1324 | 2426 |
+</div>
+
+<div style="flex: 1; min-width: 300px; padding: 10px;">
+### **Educational Special Needs vs Output**
+|   | Dropout | Graduate | Sum |
+|---|--------:|---------:|----:|
+| 0 |    2187 |     2186 | 4373 |
+| 1 |      28 |       23 |   51 |
+</div>
+
+<div style="flex: 1; min-width: 300px; padding: 10px;">
+### **Debtor vs Output**
+|   | Dropout | Graduate | Sum |
+|---|--------:|---------:|----:|
+| 0 |    1813 |     2108 | 3921 |
+| 1 |     402 |      101 |  503 |
+</div>
+
+<div style="flex: 1; min-width: 300px; padding: 10px;">
+### **Tuition Fees Up-to-date vs Output**
+|   | Dropout | Graduate | Sum |
+|---|--------:|---------:|----:|
+| 0 |     499 |       29 |  528 |
+| 1 |    1716 |     2180 | 3896 |
+</div>
+
+<div style="flex: 1; min-width: 300px; padding: 10px;">
+### **Gender vs Output**
+|       | Dropout | Graduate | Sum |
+|-------|--------:|---------:|----:|
+| Female|    1207 |     1661 | 2868 |
+| Male  |    1008 |      548 | 1556 |
+</div>
+
+<div style="flex: 1; min-width: 300px; padding: 10px;">
+### **Scholarship Holder vs Output**
+|   | Dropout | Graduate | Sum |
+|---|--------:|---------:|----:|
+| 0 |    1951 |     1374 | 3325 |
+| 1 |     264 |      835 | 1099 |
+</div>
+
+</div>
 
 ```{r,include=FALSE}
 
@@ -542,9 +641,6 @@ LDA is a classic statistical technique utilized in machine learning and pattern 
 
 At its core, LDA operates under the assumption that the data can be represented as multivariate Gaussian distributions and that the classes share the same covariance matrix. It seeks to find a projection of the data onto a lower-dimensional space while maximizing the separation between classes and minimizing the variance within each class.
 
-One of the key advantages of LDA is its simplicity and interpretability. The resulting linear discriminant functions provide insights into how different features contribute to the classification decision. Additionally, LDA is robust when the assumptions regarding the data distribution are met, making it a reliable choice for many classification problems.
-
-In practice, LDA is often used in conjunction with other techniques for data exploration, classification, and feature extraction. It finds applications in diverse fields such as finance, biology, and image processing, where the goal is to effectively differentiate between multiple classes based on available features.
 
 
 ```{r,results='hide'}
@@ -594,7 +690,10 @@ plot(roc_out_lda,
 ```
 
 ***Quadratic Discriminant Analysis (QDA)***
-Qda...
+
+QDA is an extension of Linear Discriminant Analysis (LDA) used for classification tasks. While LDA assumes that different classes share the same covariance matrix, QDA relaxes this assumption, allowing each class to have its own covariance matrix.
+
+
 ```{r}
 ######################################
 # Quadratic Discriminant Analysis (QDA)
@@ -612,7 +711,7 @@ plot(roc_out_qda,
      legacy.axes=TRUE, 
      xlab="False Positive Rate", 
      ylab="True Positive Rate", 
-     main = 'LDA')
+     main = 'QDA')
 auc(roc_out_qda)
 
 
@@ -626,10 +725,15 @@ Ridge regression is a regularization technique used in linear regression to miti
 ###########################
 # Ridge Regression
 ###########################
+```
 
-library(glmnet)
+
+```{r,results='hide'}
+suppressWarnings(library(glmnet))
+```
 
 
+```{r}
 design_matrix_train <- model.matrix(Output ~ .,
                                     data = train)
 
@@ -747,7 +851,7 @@ plot(ridge_model, xvar = 'norm')
 library(knitr)
 
 # Create a data frame that represents your dataset
-data <- data.frame(
+original_data <- data.frame(
   Variable = c("Marital status", "Application mode", "Application order", "Course", 
                "evening attendance", "Displaced", "Educational special needs", 
                "Debtor", "Tuition fees up to date", "Gender", "Scholarship holder", 
@@ -799,5 +903,5 @@ data <- data.frame(
 )
 
 # Create the table using kable
-kable(data, col.names = c("Variable", "Description"), align = c('l', 'l'), caption = "Dataset Description")
+kable(original_data, col.names = c("Variable", "Description"), align = c('l', 'l'), caption = "Dataset Description")
 ```
