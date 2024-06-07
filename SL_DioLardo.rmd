@@ -280,12 +280,13 @@ data$Nationality[data$Nationality == 1] <- 'Portoguese'
 
 ```{r, include = FALSE}
 # Change features as categorical
-colnames(data)
-categorical_names <- colnames(data)[-c(15, 17:19)]
+# colnames(data)
+# categorical_names <- colnames(data)[-c(15, 17:19)]
+# 
+# for(i in categorical_names){
+#   data[, i] <- as.factor(data[, i])
+# }
 
-for(i in categorical_names){
-  data[, i] <- as.factor(data[, i])
-}
 
 # Change variable's levels
 data$Marital.status <- factor(data$Marital.status, 
