@@ -56,7 +56,7 @@ A detailed description of the original dataset can be found in Appendix A.
 
 Let's start by loading our data and changing the output column in order to represent our research question correctly: we are going to convert all the 'Enrolled' labels into 'Dropouts' since they did not manage to complete their course in the scheduled timeframe
 
-```{r,results='hide'}
+```{r,results = 'hide'}
 data <- read.csv('~/Downloads/Dropout and Success/student_data.csv', 
                  sep = ';')
 str(data)
@@ -69,7 +69,7 @@ index_enrolled <- which(data$Output == 'Enrolled')
 data$Output[index_enrolled] <- 'Dropout'
 ```
 
-```{r, include = FALSE}
+```{r, include = F}
 library(knitr)
 library(kableExtra)
 # Rimuoviamo le variabili Curricular
@@ -96,7 +96,7 @@ sum(is.na(data))
 We changed the label criteria for some of our variables in order to increase model explainability, in the following section we will discuss and showcase our changes.
 
 
-```{r, echo = FALSE}
+```{r, echo = F}
 ## Marital status
 #1 – single 2 – married 3 – widower 4-divorced 5 de-facto union 6–legally separated)
 
@@ -109,7 +109,7 @@ data$Marital.status[index_married] <- 'Married'
 data$Marital.status[-c(index_single, index_married)] <- 'Others'
 ```
 
-```{r, echo = FALSE}
+```{r, echo = F}
 ## Mother's occupation
 # Split in white / blue collar
 index_m_no_worker <- which(data$Mother.s.occupation == 1| # Student
@@ -171,7 +171,7 @@ data$Father.s.occupation[-c(index_f_no_worker,
 
 ```
 
-```{r, echo = FALSE}
+```{r, echo = F}
 ## Mother's qualification
 
 index_m_secondary <- which(data$Mother.s.qualification == 1 | 
@@ -197,7 +197,7 @@ data$Mother.s.qualification[-c(index_m_secondary,
 
 ```
 
-```{r, include = FALSE}
+```{r, include = F}
 
 ## Previous qualification
 # Group on (no secondary education, secondary education, bachelor's degree, 
@@ -255,21 +255,21 @@ data$Father.s.qualification[-c(index_f_secondary,
 
 
 
-```{r, echo = FALSE}
+```{r, echo = F}
 ## Course
-index_stem <- which(data$Course == 1 |
-                      data$Course == 4 |
-                      data$Course == 6 |
-                      data$Course == 7 |
-                      data$Course == 8 |
-                      data$Course == 12 |
-                      data$Course == 13)
+index_stem <- which(data$Course == 1 |     # Biofuel Production Technologies
+                      data$Course == 4 |   # Agronomy
+                      data$Course == 6 |   # Veterinary Nursing
+                      data$Course == 7 |   # Informatics Engineerin
+                      data$Course == 8 |   # Equiniculture
+                      data$Course == 12 |  # Nursing
+                      data$Course == 13)   # Oral Hygiene
 data$Course[index_stem] <- 'Stem'
 data$Course[-index_stem] <- 'No Stem'
 
 ```
 
-```{r, echo = FALSE}
+```{r, echo = F}
 
 ## Nationality
 
@@ -278,7 +278,7 @@ data$Nationality[data$Nationality == 1] <- 'Portoguese'
 
 ```
 
-```{r, include = FALSE}
+```{r, include = F}
 # Change features as categorical
 # colnames(data)
 # categorical_names <- colnames(data)[-c(15, 17:19)]
@@ -286,7 +286,6 @@ data$Nationality[data$Nationality == 1] <- 'Portoguese'
 # for(i in categorical_names){
 #   data[, i] <- as.factor(data[, i])
 # }
-
 
 # Change variable's levels
 data$Marital.status <- factor(data$Marital.status, 
@@ -325,7 +324,7 @@ kable_styling(kable(table(data$Marital.status),
                     col.names = c("Status", "Freq"),
                     align = 'c',
                     format = "latex",
-                    booktabs = TRUE),
+                    booktabs = T),
               latex_options = "hold_position", 
               full_width = F,
               font_size = 9)
@@ -343,7 +342,7 @@ kable_styling(kable(t_occ,
                     caption = "Parent's occupation",
                     align = 'c',
                     format = "latex",
-                    booktabs = TRUE),
+                    booktabs = T),
               latex_options = "hold_position", 
               full_width = F,
               font_size = 9)
@@ -362,7 +361,7 @@ kable_styling(kable(t_qual,
                     caption = "Qualification",
                     align = 'c',
                     format = "latex",
-                    booktabs = TRUE),
+                    booktabs = T),
               latex_options = "hold_position", 
               full_width = F,
               font_size = 9)
@@ -379,7 +378,7 @@ kable_styling(kable(table(data$Course),
                     col.names = c("Course", "Freq"),
                     align = 'c',
                     format = "latex",
-                    booktabs = TRUE),
+                    booktabs = T),
               latex_options = "hold_position", 
               full_width = F,
               font_size = 9)
@@ -395,7 +394,7 @@ kable_styling(kable(table(data$Nationality),
                     col.names = c("Nationality", "Freq"),
                     align = 'c',
                     format = "latex",
-                    booktabs = TRUE),
+                    booktabs = T),
               latex_options = "hold_position",
               full_width = F,
               font_size = 9)
@@ -436,29 +435,29 @@ Gender differences are evident, with female students showing higher numbers of b
 library(knitr)
 library(xtable)
 t1 <- kable(addmargins(table(data$Marital.status, data$Output), 2), 
-            format = "latex", booktabs = TRUE)
+            format = "latex", booktabs = T)
 t2 <- kable(addmargins(table(data$Course, data$Output), 2), 
-            format = "latex", booktabs = TRUE)
+            format = "latex", booktabs = T)
 t3 <- kable(addmargins(table(data$Previous.qualification, data$Output), 2), 
-            format = "latex", booktabs = TRUE)
+            format = "latex", booktabs = T)
 t4 <- kable(addmargins(table(data$Nationality, data$Output), 2),
-            format = "latex", booktabs = TRUE)
+            format = "latex", booktabs = T)
 t5 <- kable(addmargins(table(data$Mother.s.qualification, data$Output), 2),
-            format = "latex", booktabs = TRUE)
+            format = "latex", booktabs = T)
 t6 <- kable(addmargins(table(data$Father.s.qualification, data$Output), 2),
-            format = "latex", booktabs = TRUE)
+            format = "latex", booktabs = T)
 t7 <- kable(addmargins(table(data$Mother.s.occupation, data$Output), 2),
-            format = "latex", booktabs = TRUE)
+            format = "latex", booktabs = T)
 t8 <- kable(addmargins(table(data$Father.s.occupation, data$Output), 2),
-            format = "latex", booktabs = TRUE)
+            format = "latex", booktabs = T)
 t9 <- kable(addmargins(table(data$Displaced, data$Output), 2),
-            format = "latex", booktabs = TRUE)
+            format = "latex", booktabs = T)
 t10 <- kable(addmargins(table(data$Tuition.fees, data$Output), 2),
-             format = "latex", booktabs = TRUE)
+             format = "latex", booktabs = T)
 t11 <- kable(addmargins(table(data$Scholarship, data$Output), 2),
-             format = "latex", booktabs = TRUE)
+             format = "latex", booktabs = T)
 t12 <- kable(addmargins(table(data$Gender, data$Output), 2),
-             format = "latex", booktabs = TRUE)
+             format = "latex", booktabs = T)
 
 ```
 *AGGIUNGERE LINK TABELLE DI RIFERIMENTO*
@@ -473,7 +472,7 @@ Ed infine si può notare che le donne hanno una probabilità notevolmente maggio
 
 *Da valutare di togliere le tabelle prevedenti e tenere solo queste che contengono le stesse informazioni più la differenza tra i due gruppi, e sopra fare solo una descrizione di come sono stati raggruppati i gruppi.*
 
-```{r sample, echo=FALSE, results='asis'}
+```{r sample, echo = F, results = 'asis'}
 
 # \\fontsize{18}{5}\\selectfont # Il primo {} è la dimensione del font, 
 #  il secondo è lo spazio tra le righe
@@ -549,31 +548,31 @@ cat(c("\\begin{table}[!htb]
 ```{r, echo = F}
 # Supponiamo di avere i seguenti dataframe
 data1 <- data.frame(
-  Var1 = sample(c("A", "B", "C"), 6, replace = TRUE),
-  Var2 = sample(c("D", "E", "F"), 6, replace = TRUE),
-  Var3 = sample(c("G", "H", "I"), 6, replace = TRUE)
+  Var1 = sample(c("A", "B", "C"), 6, replace = T),
+  Var2 = sample(c("D", "E", "F"), 6, replace = T),
+  Var3 = sample(c("G", "H", "I"), 6, replace = T)
 )
 
 data2 <- data.frame(
-  Var1 = sample(c("J", "K", "L"), 6, replace = TRUE),
-  Var2 = sample(c("M", "N", "O"), 6, replace = TRUE),
-  Var3 = sample(c("P", "Q", "R"), 6, replace = TRUE)
+  Var1 = sample(c("J", "K", "L"), 6, replace = T),
+  Var2 = sample(c("M", "N", "O"), 6, replace = T),
+  Var3 = sample(c("P", "Q", "R"), 6, replace = T)
 )
 
 data3 <- data.frame(
-  Var1 = sample(c("S", "T", "U"), 6, replace = TRUE),
-  Var2 = sample(c("V", "W", "X"), 6, replace = TRUE),
-  Var3 = sample(c("Y", "Z", "A"), 6, replace = TRUE)
+  Var1 = sample(c("S", "T", "U"), 6, replace = T),
+  Var2 = sample(c("V", "W", "X"), 6, replace = T),
+  Var3 = sample(c("Y", "Z", "A"), 6, replace = T)
 )
 
 # Creiamo e formattiamo le tabelle
-table1 <- kable(data1, format = "latex", booktabs = TRUE, col.names = c("Var1", "Var2", "Var3")) %>%
+table1 <- kable(data1, format = "latex", booktabs = T, col.names = c("Var1", "Var2", "Var3")) %>%
   kable_styling(latex_options = c("striped", "hold_position"))
 
-table2 <- kable(data2, format = "latex", booktabs = TRUE, col.names = c("Var1", "Var2", "Var3")) %>%
+table2 <- kable(data2, format = "latex", booktabs = T, col.names = c("Var1", "Var2", "Var3")) %>%
   kable_styling(latex_options = c("striped", "hold_position"))
 
-table3 <- kable(data3, format = "latex", booktabs = TRUE, col.names = c("Var1", "Var2", "Var3")) %>%
+table3 <- kable(data3, format = "latex", booktabs = T, col.names = c("Var1", "Var2", "Var3")) %>%
   kable_styling(latex_options = c("striped", "hold_position"))
 
 # Genera il codice LaTeX per disporre le tabelle su una riga
@@ -594,6 +593,14 @@ table3 <- kable(data3, format = "latex", booktabs = TRUE, col.names = c("Var1", 
 We looked for outliers among numerical features in our data, 'age at enrollment' was the only one that presented some. Since it have not a normal distribution, we decided to remove all values which are outliers in the boxplot of values condictioned by the outputs. We then perform a train-test split before and remove the outliers from the training set only: keeping outliers in the test set improves the ecological validity of the model and reduces overfitting.
 
 ```{r, echo = F, fig.align = 'center', out.height = '40%'}
+# RICORDA CHE I DISPLACED SONO I FUORISEDE
+data <- data[, -which(colnames(data) == 'Tuition.fees.up.to.date' | 
+                        colnames(data) == 'Debtor' | 
+                        colnames(data) == 'Unemployment.rate' |
+                        colnames(data) == 'Inflation.rate' |
+                        colnames(data) == 'GDP')]
+
+
 # Train test split
 set.seed(71)
 index <- sample(1:nrow(data), 
@@ -657,7 +664,7 @@ par(mfrow = c(1, 1))
 ```
 
 ### 4. Model Building
-```{r, echo = F, results= 'hide', message= FALSE}
+```{r, echo = F, results = 'hide', message = F}
 library(MASS)
 
 ######################################
@@ -682,15 +689,12 @@ summary(fit_logit_3)
 
 
 ```
-```{r, echo = F, , out.width = '50%'}
 
-
-```
 Nel grafico dei Q-Q residuals possiamo vedere che i residui non sono distribuiti normalmente, questo sta ad indicare che le variabili inserite nel modello non sono sufficienti per spiegare la variabilità dei dati. Inoltre, il grafico dei residui vs leverage mostra che ci sono dei valori che hanno un leverage molto alto, stando ad indicare che sono ancora presenti valori anomali nel dataset.
 
 
 
-```{r, echo = F, out.width = '90%', out.height= '40%', fig.align = 'center'}
+```{r, echo = F, out.width = '90%', out.height = '40%', fig.align = 'center'}
 kable(round(summary(fit_logit_3)$coefficients, 3), 
       caption = 'Logistic regression coefficients',
       align = 'r',
@@ -756,7 +760,7 @@ summary(fit_logit_9)
 ```
 
 
-```{r, echo = F, out.height= '30%'}
+```{r, echo = F, out.height = '30%'}
 ######################################
 # Linear Discriminant Analysis (LDA)
 ######################################
@@ -769,15 +773,15 @@ plot(fit_lda,
      main = 'LDA') # col not working
 
 
-kable_styling(kable((round(fit_lda$scaling, 3)), 
-      caption = 'LDA coefficients',
-      align = 'c',
-      format = 'latex',
-      booktabs = T), 
-      latex_options = c("hold_position", "scale_down"),
-      full_width = F,
-      position = "center",
-      font_size = 9)
+# kable_styling(kable((round(fit_lda$scaling, 3)), 
+#       caption = 'LDA coefficients',
+#       align = 'c',
+#       format = 'latex',
+#       booktabs = T), 
+#       latex_options = c("hold_position", "scale_down"),
+#       full_width = F,
+#       position = "center",
+#       font_size = 9)
 
 
 # Predictions
@@ -794,15 +798,16 @@ pred_lda <- predict(fit_lda,
 
 fit_qda <- qda(Output ~ ., 
                data = train)
-kable_styling(kable((round(fit_qda$scaling, 3)),
-      caption = 'QDA coefficients',
-      align = 'c',
-      format = 'latex',
-      booktabs = T), 
-      latex_options = c("hold_position", "scale_down"),
-      full_width = F,
-      position = "right",
-      font_size = 9)
+
+# kable_styling(kable((round(fit_qda$scaling, 3)),
+#       caption = 'QDA coefficients',
+#       align = 'c',
+#       format = 'latex',
+#       booktabs = T), 
+#       latex_options = c("hold_position", "scale_down"),
+#       full_width = F,
+#       position = "right",
+#       font_size = 9)
 
 # Plot density of qda coefficients with respect to the output
 pred_qda <- predict(fit_qda, 
@@ -810,7 +815,7 @@ pred_qda <- predict(fit_qda,
 detach('package:MASS')
 ```
 
-```{r, echo = FALSE, message= FALSE}
+```{r, echo = F, message= F}
 ###########################
 # Ridge Regression
 ###########################
@@ -823,11 +828,15 @@ design_matrix_train <- model.matrix(Output ~ .,
 design_matrix_test <- model.matrix(Output ~ .,
                                    data = test)
 
+# Creating a grid for lamda
+grid <- 10^seq(2, -3, length = 100)
+
 # Adattamento del modello Ridge con regressione Binomiale
 ridge_model <- glmnet(x = design_matrix_train, 
                       y = train$Output,
                       alpha = 0, 
-                      intercept = F, 
+                      lambda = grid,
+                      intercept = T, 
                       family = "binomial")
 # Find the best lambda
 
@@ -858,11 +867,13 @@ colnames(pred_ridge) <- 'pred_ridge'
 # Lasso Regression
 ###########################
 
+
 # Adattamento del modello Lasso con regressione Binomiale
 lasso_model <- glmnet(x = design_matrix_train, 
                       y = train$Output,
                       alpha = 1, 
-                      intercept = F, 
+                      lambda = grid,
+                      intercept = T, 
                       family = "binomial")
 # Find the best lambda
 
@@ -887,18 +898,22 @@ best_accuracy <- accuracies[best_lambda_index_l]
 
 colnames(pred_lasso) <- 'pred_lasso'
 ```
-```{r, echo = F}
+```{r, echo = F, fig.align = 'center'}
 # Some fancy graphs about ridge model
-plot(ridge_model, xvar = 'lambda', label = TRUE)
-plot(ridge_model, xvar = 'dev', label = TRUE)
+par(mfrow = c(1, 2))
+plot(ridge_model, xvar = 'lambda', label = T)
+plot(ridge_model, xvar = 'dev', label = T)
+title('Ridge model', outer = T, cex = 1.5, line = -2)
 
 # Some fancy graphs about lasso model
-plot(lasso_model, xvar = 'lambda', label = TRUE)
-plot(lasso_model, xvar = 'dev', label = TRUE)
+plot(lasso_model, xvar = 'lambda', label = T)
+plot(lasso_model, xvar = 'dev', label = T)
+title('Lasso model', outer = T, cex = 1.5, line = -2)
+par(mfrow = c(1, 1))
 
 ```
 
-```{r, echo = F, message = F, warning = FALSE}
+```{r, echo = F, message = F, warning = F}
 # Create roc curve for all models
 library(pROC)
 
@@ -925,13 +940,13 @@ roc_out_ridge <- roc(test$Output ~ pred_ridge,
 roc_out_lasso <- roc(test$Output ~ pred_lasso, 
                      levels = c('Dropout', 'Graduate'))
 
-# Plotting the ROC curves and resize the plot on 'False Positive Rate' = c(1, 0)
+# Plotting the ROC curves and resize the plot on 'F Positive Rate' = c(1, 0)
 plot(roc_out_logit, 
      col = 'red', 
      lwd = 2, 
      main = 'ROC curves', 
-     xlab = 'False Positive Rate', 
-     ylab = 'True Positive Rate')
+     xlab = 'F Positive Rate', 
+     ylab = 'T Positive Rate')
 lines(roc_out_lda, 
       col = 'blue', 
       lwd = 2)
@@ -1020,3 +1035,32 @@ kable_styling(kable(results,
               # position = "center", 
               font_size = 9)
 ```
+
+```{r, echo = F}
+# coef_matrix <- matrix(0, 
+#                       ncol = 4, 
+#                       nrow = 25)
+# coef_names <- names(coef(fit_logit_1))
+# coef1 <- coef(fit_logit_1)
+# coef2 <- coef(fit_logit_3)
+# coef3 <- coef(ridge_model)[, best_lambda_index_r]
+# coef4 <- coef(lasso_model)[, best_lambda_index_l]
+# 
+# coef_matrix[, 1] <- coef1
+# for(i in 1:25){
+#   if(coef_names[i] %in% names(coef2)){
+#     coef_matrix[i, 2] <- coef2[which(names(coef2) == coef_names[i])]
+#   }
+# }
+# coef_matrix[, 3] <- coef3[-2]
+# coef_matrix[, 4] <- coef4[-2]
+# 
+# coef_df <- data.frame(Logit_full = coef_matrix[, 1],
+#                       Logit_final = coef_matrix[, 2],
+#                       Ridge = coef_matrix[, 3],
+#                       Lasso = coef_matrix[, 4], 
+#                       row.names = coef_names)
+```
+
+
+
