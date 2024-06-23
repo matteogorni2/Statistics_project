@@ -60,19 +60,25 @@ Let's start by loading our data and changing the output column in order to repre
 data <- read.csv('~/Downloads/Dropout and Success/student_data.csv', 
                  sep = ';')
 str(data)
+
+# Rename Colums
 names(data)[names(data) == 'Nacionality'] <- 'Nationality'
 table(data$Output)
-# Remove 'Enrolled' to have a binomial problem
 
-index_enrolled <- which(data$Output == 'Enrolled')
-# data <- data[-index, ]
-data$Output[index_enrolled] <- 'Dropout'
+# Remove 'Enrolled' to have a binomial problem
+data$Output[which(data$Output == 'Enrolled')] <- 'Dropout'
 ```
 
 ```{r, include = F}
 library(knitr)
 library(kableExtra)
-# Rimuoviamo le variabili Curricular
+# Remove useless columns
+# RICORDA CHE I DISPLACED SONO I FUORISEDE
+data <- data[, -which(colnames(data) == 'Tuition.fees.up.to.date' | 
+                        colnames(data) == 'Debtor' | 
+                        colnames(data) == 'Unemployment.rate' |
+                        colnames(data) == 'Inflation.rate' |
+                        colnames(data) == 'GDP')]
 
 # Remove Application and Curricular and evening data
 data <- data[, -which(grepl('Application', colnames(data)) | 
@@ -116,13 +122,13 @@ index_m_no_worker <- which(data$Mother.s.occupation == 1| # Student
                              data$Mother.s.occupation == 12 | # Other
                              data$Mother.s.occupation == 13) # Blanck
 index_m_white <- which(data$Mother.s.occupation == 2 |
-                         data$Mother.s.occupation == 3 |
-                         data$Mother.s.occupation == 4 |
+                         data$Mother.s.occupation == 3 | 
+                         data$Mother.s.occupation == 4 | 
                          data$Mother.s.occupation == 5 |
                          data$Mother.s.occupation == 6 |
                          data$Mother.s.occupation == 14 | # Armed forces Officers
                          data$Mother.s.occupation == 15 | # Armed forces sergeants
-                         data$Mother.s.occupation ==  17 |
+                         data$Mother.s.occupation == 17 |
                          data$Mother.s.occupation == 19 |
                          data$Mother.s.occupation == 20 |
                          data$Mother.s.occupation == 21 |
@@ -152,7 +158,7 @@ index_f_white <- which(data$Father.s.occupation == 2 |
                          data$Father.s.occupation == 6 |
                          data$Father.s.occupation == 14 | # Armed forces Officers
                          data$Father.s.occupation == 15 | # Armed forces sergeants
-                         data$Father.s.occupation ==  17 |
+                         data$Father.s.occupation == 17 |
                          data$Father.s.occupation == 19 |
                          data$Father.s.occupation == 20 |
                          data$Father.s.occupation == 21 |
@@ -174,22 +180,22 @@ data$Father.s.occupation[-c(index_f_no_worker,
 ```{r, echo = F}
 ## Mother's qualification
 
-index_m_secondary <- which(data$Mother.s.qualification == 1 | 
-                             data$Mother.s.qualification == 6 |
-                             data$Mother.s.qualification == 13 |
-                             data$Mother.s.qualification == 15 |
-                             data$Mother.s.qualification == 22 |
+index_m_secondary <- which(data$Mother.s.qualification == 1 | # Secondary Education—12th Year of Schooling or Equivalent
+                             data$Mother.s.qualification == 6 | # Frequency of Higher Education
+                             data$Mother.s.qualification == 13 | # General commerce course
+                             data$Mother.s.qualification == 15 | # Complementary High School Course
+                             data$Mother.s.qualification == 22 | # General Course of Administration and Commerce
                              data$Mother.s.qualification == 23 |
                              data$Mother.s.qualification == 29 |
                              data$Mother.s.qualification == 31 |
                              data$Mother.s.qualification == 32)
-index_m_higher <- which(data$Mother.s.qualification == 2 |
-                          data$Mother.s.qualification == 3 |
-                          data$Mother.s.qualification == 4 |
-                          data$Mother.s.qualification == 5 |
-                          data$Mother.s.qualification == 30 |
-                          data$Mother.s.qualification == 33 |
-                          data$Mother.s.qualification == 34)
+index_m_higher <- which(data$Mother.s.qualification == 2 | # Higher Education—bachelor’s degree
+                          data$Mother.s.qualification == 3 | # Higher Education—degree
+                          data$Mother.s.qualification == 4 | # Higher Education—master’s degree
+                          data$Mother.s.qualification == 5 | # Higher Education—doctorate
+                          data$Mother.s.qualification == 30 | # Higher education—degree (1st cycle)
+                          data$Mother.s.qualification == 33 | # Higher Education—master’s degree (2nd cycle)
+                          data$Mother.s.qualification == 34) # Higher Education—doctorate (3rd cycle)
 data$Mother.s.qualification[index_m_secondary] <- 'Secondary'
 data$Mother.s.qualification[index_m_higher] <- 'Higher'
 data$Mother.s.qualification[-c(index_m_secondary, 
@@ -304,8 +310,11 @@ data$Mother.s.occupation <- factor(data$Mother.s.occupation,
                                    levels = c('Blue Collar', 'White Collar', 'Others'))
 data$Father.s.occupation <- factor(data$Father.s.occupation,
                                    levels = c('Blue Collar', 'White Collar', 'Others'))
+data$Displaced <- as.factor(data$Displaced)
+data$Educational.special.needs <- as.factor(data$Educational.special.needs)
 data$Gender <- factor(data$Gender,
                       levels = c('Female', 'Male'))
+data$Scholarship.holder <- as.factor(data$Scholarship.holder)
 data$Output <- factor(data$Output,
                       levels = c('Dropout', 'Graduate'))
 
@@ -452,12 +461,14 @@ t8 <- kable(addmargins(table(data$Father.s.occupation, data$Output), 2),
             format = "latex", booktabs = T)
 t9 <- kable(addmargins(table(data$Displaced, data$Output), 2),
             format = "latex", booktabs = T)
-t10 <- kable(addmargins(table(data$Tuition.fees, data$Output), 2),
-             format = "latex", booktabs = T)
-t11 <- kable(addmargins(table(data$Scholarship, data$Output), 2),
+t10 <- kable(addmargins(table(data$Educational.special.needs, data$Output), 2),
+            format = "latex", booktabs = T)
+t11 <- kable(addmargins(table(data$Scholarship.holder, data$Output), 2),
              format = "latex", booktabs = T)
 t12 <- kable(addmargins(table(data$Gender, data$Output), 2),
              format = "latex", booktabs = T)
+# t12 <- kable(addmargins(table(data$Tuition.fees, data$Output), 2),
+#              format = "latex", booktabs = T)
 
 ```
 *AGGIUNGERE LINK TABELLE DI RIFERIMENTO*
@@ -526,18 +537,13 @@ cat(c("\\begin{table}[!htb]
     "\\end{minipage}%
     \\begin{minipage}{.5\\linewidth}
       \\centering
-        \\caption{Tuition fees VS Output}",
+        \\caption{Education special VS Output}",
         t10,
     "\\end{minipage}
     \\begin{minipage}{.5\\linewidth}
       \\caption{Scholarship VS Output}
       \\centering",
         t11,
-    "\\end{minipage}%
-    \\begin{minipage}{.5\\linewidth}
-      \\caption{Gender VS Output}
-      \\centering",
-        t12,
     "\\end{minipage}
         
         
@@ -593,13 +599,6 @@ table3 <- kable(data3, format = "latex", booktabs = T, col.names = c("Var1", "Va
 We looked for outliers among numerical features in our data, 'age at enrollment' was the only one that presented some. Since it have not a normal distribution, we decided to remove all values which are outliers in the boxplot of values condictioned by the outputs. We then perform a train-test split before and remove the outliers from the training set only: keeping outliers in the test set improves the ecological validity of the model and reduces overfitting.
 
 ```{r, echo = F, fig.align = 'center', out.height = '40%'}
-# RICORDA CHE I DISPLACED SONO I FUORISEDE
-data <- data[, -which(colnames(data) == 'Tuition.fees.up.to.date' | 
-                        colnames(data) == 'Debtor' | 
-                        colnames(data) == 'Unemployment.rate' |
-                        colnames(data) == 'Inflation.rate' |
-                        colnames(data) == 'GDP')]
-
 
 # Train test split
 set.seed(71)
@@ -664,7 +663,7 @@ par(mfrow = c(1, 1))
 ```
 
 ### 4. Model Building
-```{r, echo = F, results = 'hide', message = F}
+```{r, echo = F, results = 'hide', message = F, warning = F}
 library(MASS)
 
 ######################################
@@ -687,7 +686,23 @@ fit_logit_3 <- update(fit_logit_2,
                .~.)
 summary(fit_logit_3)
 
+# Predictions
+pred_logit <- predict(fit_logit_3, 
+                      newdata = test, 
+                      type = 'response')
 
+# We want also see if there are some interesting interations between variables
+fit_int_1 <- update(fit_logit_3, 
+                          .~.*.)
+summary(fit_int_1)
+fit_int_2 <- step(fit_int_1)
+summary(fit_int_2)
+
+# Predictions
+# Predictions
+pred_int <- predict(fit_int_2, 
+                      newdata = test, 
+                      type = 'response')
 ```
 
 Nel grafico dei Q-Q residuals possiamo vedere che i residui non sono distribuiti normalmente, questo sta ad indicare che le variabili inserite nel modello non sono sufficienti per spiegare la variabilità dei dati. Inoltre, il grafico dei residui vs leverage mostra che ci sono dei valori che hanno un leverage molto alto, stando ad indicare che sono ancora presenti valori anomali nel dataset.
@@ -704,57 +719,12 @@ kable(round(summary(fit_logit_3)$coefficients, 3),
 
 par(mfrow = c(2, 2))
 plot(fit_logit_3)
+title('Logistic regression', outer = T, cex = 1.5, line = -2)
+
+plot(fit_int_2)
+title('Logistic regression with interactions', outer = T, cex = 1.5, line = -2)
 par(mfrow = c(1, 1))
 
-# Predictions
-pred_logit <- predict(fit_logit_3, 
-                      newdata = test, 
-                      type = 'response')
-```
-```{r, echo = F}
-# Removing outliers
-index_outliers <- which(abs(scale(fit_logit_3$residuals)) > 2)
-train2 <- train[-index_outliers, ]
-fit_logit_4 <- update(fit_logit_3, 
-                      .~., 
-                      data = train2)
-summary(fit_logit_4)
-
-# Removing outliers
-index_outliers <- which(abs(scale(fit_logit_4$residuals)) > 2)
-train2 <- train2[-index_outliers, ]
-fit_logit_5 <- update(fit_logit_4,
-                      .~.)
-summary(fit_logit_5)
-
-# Removing outliers
-index_outliers <- which(abs(scale(fit_logit_5$residuals)) > 2)
-train2 <- train2[-index_outliers, ]
-fit_logit_6 <- update(fit_logit_5, 
-                      .~.)
-summary(fit_logit_6)
-
-# Removing outliers
-index_outliers <- which(abs(scale(fit_logit_6$residuals)) > 2)
-train2 <- train2[-index_outliers, ]
-fit_logit_7 <- update(fit_logit_6, 
-                      .~.)
-summary(fit_logit_7)
-
-
-# Removing outliers
-index_outliers <- which(abs(scale(fit_logit_7$residuals)) > 2)
-train2 <- train2[-index_outliers, ]
-fit_logit_8 <- update(fit_logit_7, 
-                      .~.)
-summary(fit_logit_8)
-
-# Removing outliers
-index_outliers <- which(abs(scale(fit_logit_8$residuals)) > 2)
-train2 <- train2[-index_outliers, ]
-fit_logit_9 <- update(fit_logit_8, 
-                      .~.)
-summary(fit_logit_9)
 
 
 ```
@@ -822,10 +792,10 @@ detach('package:MASS')
 
 library(glmnet)
 
-design_matrix_train <- model.matrix(Output ~ .,
+design_matrix_train <- model.matrix(Output ~ . - 1,
                                     data = train)
 
-design_matrix_test <- model.matrix(Output ~ .,
+design_matrix_test <- model.matrix(Output ~ . - 1,
                                    data = test)
 
 # Creating a grid for lamda
@@ -921,6 +891,8 @@ library(pROC)
 roc_out_logit <- roc(test$Output ~ pred_logit, 
                      levels = c('Dropout', 'Graduate'))
 
+roc_out_int <- roc(test$Output ~ pred_int, 
+                     levels = c('Dropout', 'Graduate'))
 
 # LDA
 roc_out_lda <- roc(test$Output ~ pred_lda, 
@@ -947,6 +919,9 @@ plot(roc_out_logit,
      main = 'ROC curves', 
      xlab = 'F Positive Rate', 
      ylab = 'T Positive Rate')
+lines(roc_out_int, 
+      col = 'black', 
+      lwd = 2)
 lines(roc_out_lda, 
       col = 'blue', 
       lwd = 2)
@@ -960,8 +935,8 @@ lines(roc_out_lasso,
       col = 'orange', 
       lwd = 2)
 legend('bottomright', 
-       legend = c('Logit', 'LDA', 'QDA', 'Ridge', 'Lasso'), 
-       col = c('red', 'blue', 'green', 'purple', 'orange'), 
+       legend = c('Logit', 'Interaztion', 'LDA', 'QDA', 'Ridge', 'Lasso'), 
+       col = c('red', 'black', 'blue', 'green', 'purple', 'orange'), 
        lty = 1)
 
 
@@ -974,6 +949,7 @@ legend('bottomright',
 ```{r, echo = F}
 # AUC
 auc_logit <- round(auc(roc_out_logit), 3)
+auc_int <- round(auc(roc_out_int), 3)
 auc_lda <- round(auc(roc_out_lda), 3)
 auc_qda <- round(auc(roc_out_qda), 3)
 auc_ridge <- round(auc(roc_out_ridge), 3)
@@ -981,6 +957,7 @@ auc_lasso <- round(auc(roc_out_lasso), 3)
 
 # Confusion matrix
 confusion_matrix_logit <- addmargins(table(round(pred_logit), test$Output), 2)
+confusion_matrix_int <- addmargins(table(round(pred_int), test$Output), 2)
 confusion_matrix_lda <- addmargins(table(round(pred_lda), test$Output), 2)
 confusion_matrix_qda <- addmargins(table(round(pred_qda), test$Output), 2)
 confusion_matrix_ridge <- addmargins(table(round(pred_ridge), test$Output), 2)
@@ -989,6 +966,7 @@ confusion_matrix_lasso <- addmargins(table(round(pred_lasso), test$Output), 2)
 
 # Accuracy
 accuracy_logit <- sum(diag(confusion_matrix_logit)) / sum(confusion_matrix_logit[, -3])
+accuracy_int <- sum(diag(confusion_matrix_int)) / sum(confusion_matrix_int[, -3])
 accuracy_lda <- sum(diag(confusion_matrix_lda)) / sum(confusion_matrix_lda[, -3])
 accuracy_qda <- sum(diag(confusion_matrix_qda)) / sum(confusion_matrix_qda[, -3])
 accuracy_ridge <- sum(diag(confusion_matrix_ridge)) / sum(confusion_matrix_ridge[, -3])
@@ -996,6 +974,7 @@ accuracy_lasso <- sum(diag(confusion_matrix_lasso)) / sum(confusion_matrix_lasso
 
 # Precision
 precision_logit <- confusion_matrix_logit[2, 2] / sum(confusion_matrix_logit[2, -3])
+precision_int <- confusion_matrix_int[2, 2] / sum(confusion_matrix_int[2, -3])
 precision_lda <- confusion_matrix_lda[2, 2] / sum(confusion_matrix_lda[2, -3])
 precision_qda <- confusion_matrix_qda[2, 2] / sum(confusion_matrix_qda[2, -3])
 precision_ridge <- confusion_matrix_ridge[2, 2] / sum(confusion_matrix_ridge[2, -3])
@@ -1003,6 +982,7 @@ precision_lasso <- confusion_matrix_lasso[2, 2] / sum(confusion_matrix_lasso[2, 
 
 # Recall
 recall_logit <- confusion_matrix_logit[2, 2] / sum(confusion_matrix_logit[, 2])
+recall_int <- confusion_matrix_int[2, 2] / sum(confusion_matrix_int[, 2])
 recall_lda <- confusion_matrix_lda[2, 2] / sum(confusion_matrix_lda[, 2])
 recall_qda <- confusion_matrix_qda[2, 2] / sum(confusion_matrix_qda[, 2])
 recall_ridge <- confusion_matrix_ridge[2, 2] / sum(confusion_matrix_ridge[, 2])
@@ -1010,18 +990,24 @@ recall_lasso <- confusion_matrix_lasso[2, 2] / sum(confusion_matrix_lasso[, 2])
   
 # F1 score
 f1_logit <- 2 * (precision_logit * recall_logit) / (precision_logit + recall_logit)
+f1_int <- 2 * (precision_int * recall_int) / (precision_int + recall_int)
 f1_lda <- 2 * (precision_lda * recall_lda) / (precision_lda + recall_lda)
 f1_qda <- 2 * (precision_qda * recall_qda) / (precision_qda + recall_qda)
 f1_ridge <- 2 * (precision_ridge * recall_ridge) / (precision_ridge + recall_ridge)
 f1_lasso <- 2 * (precision_lasso * recall_lasso) / (precision_lasso + recall_lasso)
 
 # Plot a matrix with all the results
-results <- data.frame(Model = c('Logit', 'LDA', 'QDA', 'Ridge', 'Lasso'),
-                      AUC = round(c(auc_logit, auc_lda, auc_qda, auc_ridge, auc_lasso), 3),
-                      Accuracy = round(c(accuracy_logit, accuracy_lda, accuracy_qda, accuracy_ridge, accuracy_lasso), 3),
-                      Precision = round(c(precision_logit, precision_lda, precision_qda, precision_ridge, precision_lasso), 3),
-                      Recall = round(c(recall_logit, recall_lda, recall_qda, recall_ridge, recall_lasso), 3),
-                      F1 = round(c(f1_logit, f1_lda, f1_qda, f1_ridge, f1_lasso), 3))
+results <- data.frame(Model = c('Logit', 'Interaction', 'LDA', 'QDA', 'Ridge', 'Lasso'),
+                      AUC = round(c(auc_logit, auc_int, auc_lda, 
+                                    auc_qda, auc_ridge, auc_lasso), 3),
+                      Accuracy = round(c(accuracy_logit, accuracy_int, accuracy_lda, 
+                                         accuracy_qda, accuracy_ridge, accuracy_lasso), 3),
+                      Precision = round(c(precision_logit, precision_int, precision_lda, 
+                                          precision_qda, precision_ridge, precision_lasso), 3),
+                      Recall = round(c(recall_logit, recall_int, recall_lda, 
+                                       recall_qda, recall_ridge, recall_lasso), 3),
+                      F1 = round(c(f1_logit, f1_int, f1_lda, 
+                                   f1_qda, f1_ridge, f1_lasso), 3))
 
 
 
@@ -1062,5 +1048,27 @@ kable_styling(kable(results,
 #                       row.names = coef_names)
 ```
 
+
+
+
+Come possiamo vedere dalla tabella precedente, a parte per la QDA i modelli risultano molto simili tra le metriche utilizzate, anche se QDA ha ottenuto la migliore Recall. 
+Il che porta a pensare che non ci siano particolari differenze tra i modelli usati.
+POSSIAMO PRENDERE I COEFFICIENTI DEI VARI MODELLI E CONFRONTARLI TRA DI LORO. 
+ALTRI COMMENTI VARI.
+Date queste motivazioni, per semplicità di spiegazione si è deciso di usare il modello logistico semplice per spiegare il fenomeno.
+Per come è strutturato il modello (inserendo l'intercetta) non si può valutare l'incremento percentuale di ogni singola variabile, ma si può osservare di quanto è il rapporto tra le variabili. Possiamo solo valurare solo gli odds ratio. 
+Cioè per valurare quanto influenzi il sesso basta fare l'exp del coefficiente relativo al sesso.
+(exp(sex_Male) = 0.382, quindi se il sesso è maschile, la probabilità di laurearsi è 0.382 volte quella di una femmina, cioè il (100 - 38.2)% in meno rispetto ad una femmina).
+Mentre il rapporto tra Sposato e Single è di 1.06 quello tra Altro e Single è di 0.07, il che stà ad indicare che chi rientra nella categoria Altro ha una notevole differenza nello sposarsi in tempo. Chi sceglie materie non stem ha il 58.9% di probabilità relativa in meno rispetto a stem.
+Si può notare che ha una madre istruita ha più del doppio di probabilitò di laurearsi in tempo rispetto a chi ha una madre che non ha terminato le superiori, a quanto pare conoscendo il titolo di studio della madre non è influente sapere anche quello del padre.
+Ottimo chi decide di seguire una Scholarship, ha il 2.24 volte di probabilità di laurearsi in tempo rispetto a chi non la segue.
+Come ci si poteva aspettare, andando avanti con l'età la probabilità di laurearsi in tempo diminuisce, infatti per ogni anno in più di età la probabilità di laurearsi in tempo diminuisce decresce a livello esponenziale del 70% per ogni anno in più, ovviamente è solo un'approssimazione del modello
+
+
+### 6. Conclusion
+COMMENTO FINALE:
+
+Detto ciò bisogna ricordare che il modello riesce a prevedere correttamente solo il 67.7% dei casi, andando ad indicare che la parte restante è dovuta a fattori non considerati nel modello, come ad esempio la motivazione, la passione, la voglia di studiare, i docenti, ecc. 
+Da un lato ci sintiamo soddisfatti di sapere che il modello riesce a dare una discreta rappresentazione del fenomeno, ma dall'altro lato siamo ancora più soddisfatti nel sapere che una buona fetta nella riuscita dello studente non dipenda da informazioni pregresse dell'inizio del percorso accademico. Bisogna ricordare che si sta valutando solo una situazione particolare nel Portogallo della durata di 10 di raccolta dati e che probabilmente l'università è privata.
 
 
