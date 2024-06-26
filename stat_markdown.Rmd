@@ -24,18 +24,6 @@ header-includes:
 
 ------------------------------------------------------------------------
 
-\begin{table}[ht]
-\centering
-\begin{tabular}{|l|c|r|}
-  \hline
-  Header1 & Header2 & Header3 \\
-  \hline
-  Row1Col1 & Row1Col2 & Row1Col3 \\
-  Row2Col1 & Row2Col2 & Row2Col3 \\
-  \hline
-\end{tabular}
-\caption{Tabella di esempio}
-\end{table}
 
 ### 1. Obtaining the Data
 
@@ -63,25 +51,32 @@ Let's start by loading our data and changing the output column in order to repre
 data <- read.csv("C:\\Users\\gorni\\OneDrive\\Desktop\\statistical learning\\student_data.csv", 
                  sep = ';')
 str(data)
+
+# Rename Colums
 names(data)[names(data) == 'Nacionality'] <- 'Nationality'
 table(data$Output)
-# Remove 'Enrolled' to have a binomial problem
 
-index_enrolled <- which(data$Output == 'Enrolled')
-# data <- data[-index, ]
-data$Output[index_enrolled] <- 'Dropout'
+# Remove 'Enrolled' to have a binomial problem
+data$Output[which(data$Output == 'Enrolled')] <- 'Dropout'
 ```
 
 ```{r, include = F}
 library(knitr)
 library(kableExtra)
-# Rimuoviamo le variabili Curricular
+# Remove useless columns
+# RICORDA CHE I DISPLACED SONO I FUORISEDE
+data <- data[, -which(colnames(data) == 'Tuition.fees.up.to.date' | 
+                        colnames(data) == 'Debtor' | 
+                        colnames(data) == 'Unemployment.rate' |
+                        colnames(data) == 'Inflation.rate' |
+                        colnames(data) == 'GDP')]
 
 # Remove Application and Curricular and evening data
 data <- data[, -which(grepl('Application', colnames(data)) | 
                         grepl('Curricular', colnames(data)) |
                         grepl('evening', colnames(data)))]
 ### Collapse some categorical factor
+
 
 
 ```
@@ -443,12 +438,15 @@ t8 <- kable(addmargins(table(data$Father.s.occupation, data$Output), 2),
             format = "latex", booktabs = T)
 t9 <- kable(addmargins(table(data$Displaced, data$Output), 2),
             format = "latex", booktabs = T)
-t10 <- kable(addmargins(table(data$Tuition.fees, data$Output), 2),
-             format = "latex", booktabs = T)
-t11 <- kable(addmargins(table(data$Scholarship, data$Output), 2),
+t10 <- kable(addmargins(table(data$Educational.special.needs, data$Output), 2),
+            format = "latex", booktabs = T)
+t11 <- kable(addmargins(table(data$Scholarship.holder, data$Output), 2),
              format = "latex", booktabs = T)
 t12 <- kable(addmargins(table(data$Gender, data$Output), 2),
              format = "latex", booktabs = T)
+# t12 <- kable(addmargins(table(data$Tuition.fees, data$Output), 2),
+#              format = "latex", booktabs = T)
+
 
 ```
 *AGGIUNGERE LINK TABELLE DI RIFERIMENTO*
@@ -475,6 +473,8 @@ add info about age at enrollment
 
 ```{r sample, echo = F, results = 'asis'}
 
+# \\fontsize{18}{5}\\selectfont # Il primo {} è la dimensione del font, 
+#  il secondo è lo spazio tra le righe
 # \\fontsize{18}{5}\\selectfont # Il primo {} è la dimensione del font, 
 #  il secondo è lo spazio tra le righe
 
@@ -527,22 +527,18 @@ cat(c("\\begin{table}[!htb]
     "\\end{minipage}%
     \\begin{minipage}{.5\\linewidth}
       \\centering
-        \\caption{Tuition fees VS Output}",
+        \\caption{Education special VS Output}",
         t10,
     "\\end{minipage}
     \\begin{minipage}{.5\\linewidth}
       \\caption{Scholarship VS Output}
       \\centering",
         t11,
-    "\\end{minipage}%
-    \\begin{minipage}{.5\\linewidth}
-      \\caption{Gender VS Output}
-      \\centering",
-        t12,
     "\\end{minipage}
         
         
 \\end{table}"
+
 ))  
 ```
 
@@ -633,7 +629,7 @@ The core idea behind logistic regression is to model the relationship between on
 
 In logistic regression, the coefficients associated with each feature are estimated using maximum likelihood estimation. These coefficients represent the impact of each feature on the log-odds of the outcome variable.
 
-```{r, echo = F, results = 'hide', message = F}
+```{r, echo = F, message = F}
 library(MASS)
 
 ######################################
@@ -656,10 +652,28 @@ fit_logit_3 <- update(fit_logit_2,
                .~.)
 summary(fit_logit_3)
 
+# Predictions
+pred_logit <- predict(fit_logit_3, 
+                      newdata = test, 
+                      type = 'response')
+
+# We want also see if there are some interesting interations between variables
+fit_int_1 <- update(fit_logit_3, 
+                          .~.*.)
+summary(fit_int_1)
+fit_int_2 <- step(fit_int_1)
+summary(fit_int_2)
+
+# Predictions
+# Predictions
+pred_int <- predict(fit_int_2, 
+                      newdata = test, 
+                      type = 'response')
 
 ```
 
-Nel grafico dei Q-Q residuals possiamo vedere che i residui non sono distribuiti normalmente, questo sta ad indicare che le variabili inserite nel modello non sono sufficienti per spiegare la variabilità dei dati. Inoltre, il grafico dei residui vs leverage mostra che ci sono dei valori che hanno un leverage molto alto, stando ad indicare che sono ancora presenti valori anomali nel dataset.
+In the Q-Q residuals plot, it is evident that the residuals are not normally distributed, suggesting that the variables included in the model are insufficient to explain the data variability. Additionally, the residuals vs leverage plot reveals the presence of points with very high leverage, indicating that there are still outliers in the dataset.
+
 
 
 
@@ -673,57 +687,11 @@ kable(round(summary(fit_logit_3)$coefficients, 3),
 
 par(mfrow = c(2, 2))
 plot(fit_logit_3)
+title('Logistic regression', outer = T, cex = 1.5, line = -2)
+
+plot(fit_int_2)
+title('Logistic regression with interactions', outer = T, cex = 1.5, line = -2)
 par(mfrow = c(1, 1))
-
-# Predictions
-pred_logit <- predict(fit_logit_3, 
-                      newdata = test, 
-                      type = 'response')
-```
-```{r, echo = F}
-# Removing outliers
-index_outliers <- which(abs(scale(fit_logit_3$residuals)) > 2)
-train2 <- train[-index_outliers, ]
-fit_logit_4 <- update(fit_logit_3, 
-                      .~., 
-                      data = train2)
-summary(fit_logit_4)
-
-# Removing outliers
-index_outliers <- which(abs(scale(fit_logit_4$residuals)) > 2)
-train2 <- train2[-index_outliers, ]
-fit_logit_5 <- update(fit_logit_4,
-                      .~.)
-summary(fit_logit_5)
-
-# Removing outliers
-index_outliers <- which(abs(scale(fit_logit_5$residuals)) > 2)
-train2 <- train2[-index_outliers, ]
-fit_logit_6 <- update(fit_logit_5, 
-                      .~.)
-summary(fit_logit_6)
-
-# Removing outliers
-index_outliers <- which(abs(scale(fit_logit_6$residuals)) > 2)
-train2 <- train2[-index_outliers, ]
-fit_logit_7 <- update(fit_logit_6, 
-                      .~.)
-summary(fit_logit_7)
-
-
-# Removing outliers
-index_outliers <- which(abs(scale(fit_logit_7$residuals)) > 2)
-train2 <- train2[-index_outliers, ]
-fit_logit_8 <- update(fit_logit_7, 
-                      .~.)
-summary(fit_logit_8)
-
-# Removing outliers
-index_outliers <- which(abs(scale(fit_logit_8$residuals)) > 2)
-train2 <- train2[-index_outliers, ]
-fit_logit_9 <- update(fit_logit_8, 
-                      .~.)
-summary(fit_logit_9)
 
 
 ```
@@ -912,6 +880,8 @@ library(pROC)
 roc_out_logit <- roc(test$Output ~ pred_logit, 
                      levels = c('Dropout', 'Graduate'))
 
+roc_out_int <- roc(test$Output ~ pred_int, 
+                     levels = c('Dropout', 'Graduate'))
 
 # LDA
 roc_out_lda <- roc(test$Output ~ pred_lda, 
@@ -938,6 +908,9 @@ plot(roc_out_logit,
      main = 'ROC curves', 
      xlab = 'F Positive Rate', 
      ylab = 'T Positive Rate')
+lines(roc_out_int, 
+      col = 'black', 
+      lwd = 2)
 lines(roc_out_lda, 
       col = 'blue', 
       lwd = 2)
@@ -951,11 +924,9 @@ lines(roc_out_lasso,
       col = 'orange', 
       lwd = 2)
 legend('bottomright', 
-       legend = c('Logit', 'LDA', 'QDA', 'Ridge', 'Lasso'), 
-       col = c('red', 'blue', 'green', 'purple', 'orange'), 
+       legend = c('Logit', 'Interaztion', 'LDA', 'QDA', 'Ridge', 'Lasso'), 
+       col = c('red', 'black', 'blue', 'green', 'purple', 'orange'), 
        lty = 1)
-
-
 
 
 ```
@@ -965,6 +936,7 @@ legend('bottomright',
 ```{r, echo = F}
 # AUC
 auc_logit <- round(auc(roc_out_logit), 3)
+auc_int <- round(auc(roc_out_int), 3)
 auc_lda <- round(auc(roc_out_lda), 3)
 auc_qda <- round(auc(roc_out_qda), 3)
 auc_ridge <- round(auc(roc_out_ridge), 3)
@@ -972,6 +944,7 @@ auc_lasso <- round(auc(roc_out_lasso), 3)
 
 # Confusion matrix
 confusion_matrix_logit <- addmargins(table(round(pred_logit), test$Output), 2)
+confusion_matrix_int <- addmargins(table(round(pred_int), test$Output), 2)
 confusion_matrix_lda <- addmargins(table(round(pred_lda), test$Output), 2)
 confusion_matrix_qda <- addmargins(table(round(pred_qda), test$Output), 2)
 confusion_matrix_ridge <- addmargins(table(round(pred_ridge), test$Output), 2)
@@ -980,6 +953,7 @@ confusion_matrix_lasso <- addmargins(table(round(pred_lasso), test$Output), 2)
 
 # Accuracy
 accuracy_logit <- sum(diag(confusion_matrix_logit)) / sum(confusion_matrix_logit[, -3])
+accuracy_int <- sum(diag(confusion_matrix_int)) / sum(confusion_matrix_int[, -3])
 accuracy_lda <- sum(diag(confusion_matrix_lda)) / sum(confusion_matrix_lda[, -3])
 accuracy_qda <- sum(diag(confusion_matrix_qda)) / sum(confusion_matrix_qda[, -3])
 accuracy_ridge <- sum(diag(confusion_matrix_ridge)) / sum(confusion_matrix_ridge[, -3])
@@ -987,6 +961,7 @@ accuracy_lasso <- sum(diag(confusion_matrix_lasso)) / sum(confusion_matrix_lasso
 
 # Precision
 precision_logit <- confusion_matrix_logit[2, 2] / sum(confusion_matrix_logit[2, -3])
+precision_int <- confusion_matrix_int[2, 2] / sum(confusion_matrix_int[2, -3])
 precision_lda <- confusion_matrix_lda[2, 2] / sum(confusion_matrix_lda[2, -3])
 precision_qda <- confusion_matrix_qda[2, 2] / sum(confusion_matrix_qda[2, -3])
 precision_ridge <- confusion_matrix_ridge[2, 2] / sum(confusion_matrix_ridge[2, -3])
@@ -994,6 +969,7 @@ precision_lasso <- confusion_matrix_lasso[2, 2] / sum(confusion_matrix_lasso[2, 
 
 # Recall
 recall_logit <- confusion_matrix_logit[2, 2] / sum(confusion_matrix_logit[, 2])
+recall_int <- confusion_matrix_int[2, 2] / sum(confusion_matrix_int[, 2])
 recall_lda <- confusion_matrix_lda[2, 2] / sum(confusion_matrix_lda[, 2])
 recall_qda <- confusion_matrix_qda[2, 2] / sum(confusion_matrix_qda[, 2])
 recall_ridge <- confusion_matrix_ridge[2, 2] / sum(confusion_matrix_ridge[, 2])
@@ -1001,18 +977,24 @@ recall_lasso <- confusion_matrix_lasso[2, 2] / sum(confusion_matrix_lasso[, 2])
   
 # F1 score
 f1_logit <- 2 * (precision_logit * recall_logit) / (precision_logit + recall_logit)
+f1_int <- 2 * (precision_int * recall_int) / (precision_int + recall_int)
 f1_lda <- 2 * (precision_lda * recall_lda) / (precision_lda + recall_lda)
 f1_qda <- 2 * (precision_qda * recall_qda) / (precision_qda + recall_qda)
 f1_ridge <- 2 * (precision_ridge * recall_ridge) / (precision_ridge + recall_ridge)
 f1_lasso <- 2 * (precision_lasso * recall_lasso) / (precision_lasso + recall_lasso)
 
 # Plot a matrix with all the results
-results <- data.frame(Model = c('Logit', 'LDA', 'QDA', 'Ridge', 'Lasso'),
-                      AUC = round(c(auc_logit, auc_lda, auc_qda, auc_ridge, auc_lasso), 3),
-                      Accuracy = round(c(accuracy_logit, accuracy_lda, accuracy_qda, accuracy_ridge, accuracy_lasso), 3),
-                      Precision = round(c(precision_logit, precision_lda, precision_qda, precision_ridge, precision_lasso), 3),
-                      Recall = round(c(recall_logit, recall_lda, recall_qda, recall_ridge, recall_lasso), 3),
-                      F1 = round(c(f1_logit, f1_lda, f1_qda, f1_ridge, f1_lasso), 3))
+results <- data.frame(Model = c('Logit', 'Interaction', 'LDA', 'QDA', 'Ridge', 'Lasso'),
+                      AUC = round(c(auc_logit, auc_int, auc_lda, 
+                                    auc_qda, auc_ridge, auc_lasso), 3),
+                      Accuracy = round(c(accuracy_logit, accuracy_int, accuracy_lda, 
+                                         accuracy_qda, accuracy_ridge, accuracy_lasso), 3),
+                      Precision = round(c(precision_logit, precision_int, precision_lda, 
+                                          precision_qda, precision_ridge, precision_lasso), 3),
+                      Recall = round(c(recall_logit, recall_int, recall_lda, 
+                                       recall_qda, recall_ridge, recall_lasso), 3),
+                      F1 = round(c(f1_logit, f1_int, f1_lda, 
+                                   f1_qda, f1_ridge, f1_lasso), 3))
 
 
 
