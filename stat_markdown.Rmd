@@ -1,7 +1,7 @@
 ---
 title: "Stat_text"
 date: "2024-05-23"
-output: pdf_document
+output: html_document
 header-includes:
 - \usepackage{booktabs}
 - \usepackage{longtable}
@@ -24,7 +24,7 @@ header-includes:
 
 ### 1. Obtaining the Data
 
-We originally found the dataset on Kaggle. The data was collected by the Polytechnic Institute of Portalegre in Portugal to build machine learning models that predict a student’s outcome based on various socioeconomic factors and academic performance. This was done to develop an analytics tool for the tutoring program to direct their efforts more effectively.
+The data was originally collected by the Polytechnic Institute of Portalegre in Portugal to build machine learning models that predict a student’s outcome based on various socioeconomic factors and academic performance. This was done to develop an analytics tool for the tutoring program to direct their efforts more effectively. We found a copy of it on Kaggle.
 
 The dataset was created from several disjoint databases and includes students enrolled in different undergraduate degrees, such as agronomy, design, education, nursing, journalism, management, social service, and technologies, it consists of 4424 records with 35 features.
 
@@ -42,11 +42,11 @@ A detailed description of the original dataset can be found in Appendix A.
 
 ### Step 2. Data Preprocessing
 
-Let's start by loading our data and changing the graduated column in order to represent our research question correctly: we are going to convert all the 'Enrolled' labels into 'Dropouts' since they did not manage to complete their course in the scheduled timeframe
+Let's start by loading our data and changing the graduated column in order to represent our research question correctly: we are going to rename the 'Output' variable into 'is.graduated' and we make it binary, 'yes' labels will correspond to the old 'Graduate' labels, while all the 'Enrolled' and 'Dropout' labels will be converted into 'no' 
 
 ```{r, results = 'hide'}
 
-data <- read.csv('~/Downloads/Dropout and Success/student_data.csv', 
+data <- read.csv("C:\\Users\\gorni\\OneDrive\\Desktop\\statistical learning\\student_data.csv", 
                  sep = ';')
 str(data)
 
@@ -85,9 +85,9 @@ there were no missing values in the dataset.
 sum(is.na(data))
 ```
 
-**Data labeling**
+**Data preprocessing**
 
-We changed the label criteria for some of our variables in order to increase model explainability, in the following section we will discuss and showcase our changes.
+We changed the labeling criteria in some of our variables in order to increase model explainability, in the following section we will discuss and showcase our changes.
 
 
 ```{r, echo = F}
@@ -298,7 +298,8 @@ data <- data[, -which(colnames(data) == 'International')]
 
 Marital status
 
-Categorical variable indicating the marital status of the individual. We only have 4 widowers and 6 legally separated instances, therefore we collapsed them under the variable 'Others', we also decided to merge 'divorced' and 'legally separated' since the difference between the two instances is not relevant for our analysis.
+Categorical variable with 5 values indicating the marital status of the individual.
+Given that the majority of the vast majority of students is single and only a few of them belong to one of the other categories we merged them under the variable 'Others', we also decided to merge 'divorced' and 'legally separated' since the difference between the two instances is not relevant for our analysis.
 
 ```{r, echo = F}
 
