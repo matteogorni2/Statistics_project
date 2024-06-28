@@ -1,10 +1,7 @@
 ---
-title: "stat_markdown"
+title: "Stat_text"
+date: "2024-05-23"
 output: pdf_document
-date: "2024-06-11"
----
-
----
 header-includes:
 - \usepackage{booktabs}
 - \usepackage{longtable}
@@ -45,39 +42,38 @@ A detailed description of the original dataset can be found in Appendix A.
 
 ### Step 2. Data Preprocessing
 
-Let's start by loading our data and changing the output column in order to represent our research question correctly: we are going to convert all the 'Enrolled' labels into 'Dropouts' since they did not manage to complete their course in the scheduled timeframe
+Let's start by loading our data and changing the graduated column in order to represent our research question correctly: we are going to convert all the 'Enrolled' labels into 'Dropouts' since they did not manage to complete their course in the scheduled timeframe
 
-```{r,results = 'hide'}
-data <- read.csv("C:\\Users\\gorni\\OneDrive\\Desktop\\statistical learning\\student_data.csv", 
+```{r, results = 'hide'}
+
+data <- read.csv('~/Downloads/Dropout and Success/student_data.csv', 
                  sep = ';')
 str(data)
 
 # Rename Colums
 names(data)[names(data) == 'Nacionality'] <- 'Nationality'
-table(data$Output)
+names(data)[names(data) == 'Output'] <- 'is_Graduated'
 
 # Remove 'Enrolled' to have a binomial problem
-data$Output[which(data$Output == 'Enrolled')] <- 'Dropout'
+data$is_Graduated[which(data$is_Graduated == 'Enrolled' | 
+                       data$is_Graduated == 'Dropout')] <- 'No'
+data$is_Graduated[which(data$is_Graduated == 'Graduate')] <- 'Yes'
+
 ```
 
 ```{r, include = F}
 library(knitr)
 library(kableExtra)
-# Remove useless columns
-# RICORDA CHE I DISPLACED SONO I FUORISEDE
-data <- data[, -which(colnames(data) == 'Tuition.fees.up.to.date' | 
-                        colnames(data) == 'Debtor' | 
-                        colnames(data) == 'Unemployment.rate' |
-                        colnames(data) == 'Inflation.rate' |
-                        colnames(data) == 'GDP')]
 
-# Remove Application and Curricular and evening data
+# Remove useless columns
 data <- data[, -which(grepl('Application', colnames(data)) | 
+                        grepl('Tuition', colnames(data)) |
+                        grepl('Debtor', colnames(data)) |
+                        grepl('Unemployment', colnames(data)) |
+                        grepl('Inflation', colnames(data)) |
+                        grepl('GDP', colnames(data)) |
                         grepl('Curricular', colnames(data)) |
                         grepl('evening', colnames(data)))]
-### Collapse some categorical factor
-
-
 
 ```
 
@@ -95,11 +91,8 @@ We changed the label criteria for some of our variables in order to increase mod
 
 
 ```{r, echo = F}
+
 ## Marital status
-#1 – single 2 – married 3 – widower 4-divorced 5 de-facto union 6–legally separated)
-
-
-
 index_single <- which(data$Marital.status == 1) # Single
 index_married <- which(data$Marital.status == 2) # Married
 data$Marital.status[index_single] <- 'Single'
@@ -108,6 +101,7 @@ data$Marital.status[-c(index_single, index_married)] <- 'Others'
 ```
 
 ```{r, echo = F}
+
 ## Mother's occupation
 # Split in white / blue collar
 index_m_no_worker <- which(data$Mother.s.occupation == 1| # Student
@@ -170,8 +164,8 @@ data$Father.s.occupation[-c(index_f_no_worker,
 ```
 
 ```{r, echo = F}
-## Mother's qualification
 
+## Mother's qualification
 index_m_secondary <- which(data$Mother.s.qualification == 1 | 
                              data$Mother.s.qualification == 6 |
                              data$Mother.s.qualification == 13 |
@@ -204,10 +198,6 @@ index_secondary <- which(data$Previous.qualification == 1 |
                            data$Previous.qualification == 6 |
                            data$Previous.qualification == 14 |
                            data$Previous.qualification == 16)
-# Aggiungiamo '6' perchè se frequenti l'uni ti sei già diplomato e 
-# se fai dei corsi da specializzando tecnico dovresti aver 
-# fatto le superiori, però non valgono come la laurea
-
 index_higher <- which(data$Previous.qualification == 2 |
                         data$Previous.qualification == 3 |
                         data$Previous.qualification == 15 |
@@ -219,11 +209,11 @@ data$Previous.qualification[index_higher] <- 'Higher'
 data$Previous.qualification[-c(index_secondary, 
                                index_higher)] <- 'No Secondary'
 
-# Gender
+
+## Gender
 index_male <- which(data$Gender == 1)
 data$Gender[index_male] <- 'Male'
 data$Gender[-index_male] <- 'Female'
-
 
 
 ## Father's qualification
@@ -254,6 +244,7 @@ data$Father.s.qualification[-c(index_f_secondary,
 
 
 ```{r, echo = F}
+
 ## Course
 index_stem <- which(data$Course == 1 |     # Biofuel Production Technologies
                       data$Course == 4 |   # Agronomy
@@ -270,20 +261,12 @@ data$Course[-index_stem] <- 'No Stem'
 ```{r, echo = F}
 
 ## Nationality
-
 data$Nationality[data$Nationality != 1] <- 'Others' # just 2%
 data$Nationality[data$Nationality == 1] <- 'Portoguese'
 
 ```
 
 ```{r, include = F}
-# Change features as categorical
-# colnames(data)
-# categorical_names <- colnames(data)[-c(15, 17:19)]
-# 
-# for(i in categorical_names){
-#   data[, i] <- as.factor(data[, i])
-# }
 
 # Change variable's levels
 data$Marital.status <- factor(data$Marital.status, 
@@ -304,12 +287,13 @@ data$Father.s.occupation <- factor(data$Father.s.occupation,
                                    levels = c('Blue Collar', 'White Collar', 'Others'))
 data$Gender <- factor(data$Gender,
                       levels = c('Female', 'Male'))
-data$Output <- factor(data$Output,
-                      levels = c('Dropout', 'Graduate'))
+data$is_Graduated <- factor(data$is_Graduated,
+                      levels = c('No', 'Yes'))
 
 
 table(data$Nationality, data$International)
 data <- data[, -which(colnames(data) == 'International')]
+
 ```
 
 Marital status
@@ -317,6 +301,7 @@ Marital status
 Categorical variable indicating the marital status of the individual. We only have 4 widowers and 6 legally separated instances, therefore we collapsed them under the variable 'Others', we also decided to merge 'divorced' and 'legally separated' since the difference between the two instances is not relevant for our analysis.
 
 ```{r, echo = F}
+
 kable_styling(kable(table(data$Marital.status),
                     caption = "Marital status",
                     col.names = c("Status", "Freq"),
@@ -326,6 +311,7 @@ kable_styling(kable(table(data$Marital.status),
               latex_options = "hold_position", 
               full_width = F,
               font_size = 9)
+
 ```
 
 Mother/Father occupation
@@ -333,6 +319,7 @@ Mother/Father occupation
 Categorical variables indicating the mother and father occupation respectively, while the original dataset had 32 labels for all kinds of different jobs, we decided to merge some of the labels and make this a 3-label categorical variable. Jobs were split based on a White/Blue collar distinction, as shown in the table below.
 
 ```{r, echo = F}
+
 t_occ <- data.frame(Occupation = levels(data$Mother.s.occupation),
                     Mother = matrix(table(data$Mother.s.occupation)), 
                     Father = matrix(table(data$Father.s.occupation)))
@@ -344,6 +331,7 @@ kable_styling(kable(t_occ,
               latex_options = "hold_position", 
               full_width = F,
               font_size = 9)
+
 ```
 
 Mother/Father/Student education
@@ -351,6 +339,7 @@ Mother/Father/Student education
 Categorical variable indicating the level of each parents’ qualification as well as the student's. Again, we are dealing with many categorical variables, so we decided to merge them based on whether they have an completed an higher education cycle and if they have finished high school or not
 
 ```{r, echo = F}
+
 t_qual <- data.frame(Qualification = levels(data$Mother.s.qualification),
                      Mother = matrix(table(data$Mother.s.qualification)), 
                      Father = matrix(table(data$Father.s.qualification)), 
@@ -363,6 +352,7 @@ kable_styling(kable(t_qual,
               latex_options = "hold_position", 
               full_width = F,
               font_size = 9)
+
 ```              
 
 
@@ -371,6 +361,7 @@ Courses
 Categorical variable representing the course chosen at enrollment, we originally had 17 different courses, we decided to relabel the courses using whether they are STEM subjects or not as a splitting criterion
 
 ```{r, echo = F}
+
 kable_styling(kable(table(data$Course),
                     caption = "Course",
                     col.names = c("Course", "Freq"),
@@ -380,6 +371,7 @@ kable_styling(kable(table(data$Course),
               latex_options = "hold_position", 
               full_width = F,
               font_size = 9)
+
 ```
 
 Nationality:
@@ -387,6 +379,7 @@ Nationality:
 categorical variable representing a students nationality: looking at the data we saw that while we had a lot of labels (one for each nationality), the vast majority of people were Portuguese, therefore we labeled data in the following way
 
 ```{r, echo = F}
+
 kable_styling(kable(table(data$Nationality),
                     caption = "Nationality", 
                     col.names = c("Nationality", "Freq"),
@@ -396,6 +389,7 @@ kable_styling(kable(table(data$Nationality),
               latex_options = "hold_position",
               full_width = F,
               font_size = 9)
+
 ```
 
 **FEATURE REMOVAL**
@@ -420,33 +414,31 @@ Given that to build our model we are going to use only information that was pres
 ```{r, echo = F}
 library(knitr)
 library(xtable)
-t1 <- kable(addmargins(table(data$Marital.status, data$Output), 2), 
-            format = "latex", booktabs = T)
-t2 <- kable(addmargins(table(data$Course, data$Output), 2), 
-            format = "latex", booktabs = T)
-t3 <- kable(addmargins(table(data$Previous.qualification, data$Output), 2), 
-            format = "latex", booktabs = T)
-t4 <- kable(addmargins(table(data$Nationality, data$Output), 2),
-            format = "latex", booktabs = T)
-t5 <- kable(addmargins(table(data$Mother.s.qualification, data$Output), 2),
-            format = "latex", booktabs = T)
-t6 <- kable(addmargins(table(data$Father.s.qualification, data$Output), 2),
-            format = "latex", booktabs = T)
-t7 <- kable(addmargins(table(data$Mother.s.occupation, data$Output), 2),
-            format = "latex", booktabs = T)
-t8 <- kable(addmargins(table(data$Father.s.occupation, data$Output), 2),
-            format = "latex", booktabs = T)
-t9 <- kable(addmargins(table(data$Displaced, data$Output), 2),
-            format = "latex", booktabs = T)
-t10 <- kable(addmargins(table(data$Educational.special.needs, data$Output), 2),
-            format = "latex", booktabs = T)
-t11 <- kable(addmargins(table(data$Scholarship.holder, data$Output), 2),
-             format = "latex", booktabs = T)
-t12 <- kable(addmargins(table(data$Gender, data$Output), 2),
-             format = "latex", booktabs = T)
-# t12 <- kable(addmargins(table(data$Tuition.fees, data$Output), 2),
-#              format = "latex", booktabs = T)
 
+t1 <- kable(addmargins(table(data$Marital.status, data$is_Graduated), 2), 
+            format = "latex", booktabs = T)
+t2 <- kable(addmargins(table(data$Course, data$is_Graduated), 2), 
+            format = "latex", booktabs = T)
+t3 <- kable(addmargins(table(data$Previous.qualification, data$is_Graduated), 2), 
+            format = "latex", booktabs = T)
+t4 <- kable(addmargins(table(data$Nationality, data$is_Graduated), 2),
+            format = "latex", booktabs = T)
+t5 <- kable(addmargins(table(data$Mother.s.qualification, data$is_Graduated), 2),
+            format = "latex", booktabs = T)
+t6 <- kable(addmargins(table(data$Father.s.qualification, data$is_Graduated), 2),
+            format = "latex", booktabs = T)
+t7 <- kable(addmargins(table(data$Mother.s.occupation, data$is_Graduated), 2),
+            format = "latex", booktabs = T)
+t8 <- kable(addmargins(table(data$Father.s.occupation, data$is_Graduated), 2),
+            format = "latex", booktabs = T)
+t9 <- kable(addmargins(table(data$Displaced, data$is_Graduated), 2),
+            format = "latex", booktabs = T)
+t10 <- kable(addmargins(table(data$Educational.special.needs, data$is_Graduated), 2),
+            format = "latex", booktabs = T)
+t11 <- kable(addmargins(table(data$Scholarship.holder, data$is_Graduated), 2),
+             format = "latex", booktabs = T)
+t12 <- kable(addmargins(table(data$Gender, data$is_Graduated), 2),
+             format = "latex", booktabs = T)
 
 ```
 *AGGIUNGERE LINK TABELLE DI RIFERIMENTO*
@@ -473,88 +465,73 @@ add info about age at enrollment
 
 ```{r sample, echo = F, results = 'asis'}
 
-# \\fontsize{18}{5}\\selectfont # Il primo {} è la dimensione del font, 
-#  il secondo è lo spazio tra le righe
-# \\fontsize{18}{5}\\selectfont # Il primo {} è la dimensione del font, 
-#  il secondo è lo spazio tra le righe
-
 cat(c("\\begin{table}[!htb]
     \\fontsize{9}{11}\\selectfont
     \\begin{minipage}{.5\\linewidth}
-      \\caption{Marital status VS Output}
+      \\caption{Marital status VS is_Graduated}
       \\centering",
         t1,
     "\\end{minipage}%
     \\begin{minipage}{.5\\linewidth}
       \\centering
-        \\caption{Previous qualification VS Output}",
+        \\caption{Previous qualification VS is_Graduated}",
         t3,
     "\\end{minipage}
     \\begin{minipage}{.5\\linewidth}
-      \\caption{Course VS Output}
+      \\caption{Course VS is_Graduated}
       \\centering",
         t2,
     "\\end{minipage}%
     \\begin{minipage}{.5\\linewidth}
       \\centering
-        \\caption{Nationality VS Output}",
+        \\caption{Nationality VS is_Graduated}",
         t4,
     "\\end{minipage}
     \\begin{minipage}{.5\\linewidth}
-      \\caption{Mother's qualification VS Output}
+      \\caption{Mother's qualification VS is_Graduated}
       \\centering",
         t5,
     "\\end{minipage}%
     \\begin{minipage}{.5\\linewidth}
       \\centering
-        \\caption{Father's qualification VS Output}",
+        \\caption{Father's qualification VS is_Graduated}",
         t6,
     "\\end{minipage}
     \\begin{minipage}{.5\\linewidth}
-      \\caption{Mother's occupation VS Output}
+      \\caption{Mother's occupation VS is_Graduated}
       \\centering",
         t7,
     "\\end{minipage}%
     \\begin{minipage}{.5\\linewidth}
       \\centering
-        \\caption{Father's occupation VS Output}",
+        \\caption{Father's occupation VS is_Graduated}",
         t8,
     "\\end{minipage}
     \\begin{minipage}{.5\\linewidth}
-      \\caption{Displaced VS Output}
+      \\caption{Displaced VS is_Graduated}
       \\centering",
         t9,
     "\\end{minipage}%
     \\begin{minipage}{.5\\linewidth}
       \\centering
-        \\caption{Education special VS Output}",
+        \\caption{Education special VS is_Graduated}",
         t10,
     "\\end{minipage}
     \\begin{minipage}{.5\\linewidth}
-      \\caption{Scholarship VS Output}
+      \\caption{Scholarship VS is_Graduated}
       \\centering",
         t11,
     "\\end{minipage}
-        
-        
 \\end{table}"
-
 ))  
 ```
 
 
 **OUTLIERS DETECTION AND REMOVAL**
 
-We looked for outliers among numerical features in our data, 'age at enrollment' was the only one that presented some. Since it have not a normal distribution, we decided to remove all values which are outliers in the boxplot of values condictioned by the outputs. We then perform a train-test split before and remove the outliers from the training set only: keeping outliers in the test set improves the ecological validity of the model and reduces overfitting.
+We looked for outliers among numerical features in our data, 'age at enrollment' was the only one that presented some. Since it have not a normal distribution, we decided to remove all values which are outliers in the boxplot of values condictioned by the graduateds. We then perform a train-test split before and remove the outliers from the training set only: keeping outliers in the test set improves the ecological validity of the model and reduces overfitting.
 
 ```{r, echo = F, fig.align = 'center', out.height = '40%'}
-# RICORDA CHE I DISPLACED SONO I FUORISEDE
-data <- data[, -which(colnames(data) == 'Tuition.fees.up.to.date' | 
-                        colnames(data) == 'Debtor' | 
-                        colnames(data) == 'Unemployment.rate' |
-                        colnames(data) == 'Inflation.rate' |
-                        colnames(data) == 'GDP')]
-
 
 # Train test split
 set.seed(71)
@@ -565,18 +542,18 @@ test <- data[-index, ]
 
 # outliers removal
 par(mfrow = c(1, 2))
-boxplot(train$Age.at.enrollment ~ train$Output, 
+boxplot(train$Age.at.enrollment ~ train$is_Graduated, 
         col = c('red', 'blue'),
         main = 'Age at enrollment',
-        xlab = 'Output')
-plot(density(train$Age.at.enrollment[train$Output == 'Graduate']), 
+        xlab = 'is_Graduated')
+plot(density(train$Age.at.enrollment[train$is_Graduated == 'Yes']), 
      col = 'blue',
      main = 'Age at enrollment', 
      xlab = 'Age at enrollment')
-lines(density(train$Age.at.enrollment[train$Output == 'Dropout']), 
+lines(density(train$Age.at.enrollment[train$is_Graduated == 'No']), 
       col = 'red')
 legend('topright', 
-       legend = c('Graduate', 'Dropout'), 
+       legend = c('Yes', 'No'), 
        col = c('blue', 'red'), 
        lty = 1)
 par(mfrow = c(1, 1))
@@ -584,13 +561,14 @@ par(mfrow = c(1, 1))
 ```
 
 ```{r, echo = F, fig.show = 'hide'}
+
 # Removing outliers
-max_age_drop <- min(boxplot(train$Age.at.enrollment[train$Output == 'Dropout'])$out)
+max_age_drop <- min(boxplot(train$Age.at.enrollment[train$is_Graduated == 'No'])$out)
 index_age_drop <- which(train$Age.at.enrollment >= max_age_drop &
-                          train$Output == 'Dropout')
-max_age_grad <- min(boxplot(train$Age.at.enrollment[train$Output == 'Graduate'])$out)
+                          train$is_Graduated == 'No')
+max_age_grad <- min(boxplot(train$Age.at.enrollment[train$is_Graduated == 'Yes'])$out)
 index_age_grad <- which(train$Age.at.enrollment >= max_age_grad &
-                          train$Output == 'Graduate')
+                          train$is_Graduated == 'Yes')
 train <- train[-c(index_age_drop, 
                   index_age_grad), ]
 
@@ -598,24 +576,26 @@ train <- train[-c(index_age_drop,
 ```
 
 ```{r, echo = F, out.height = '30%', fig.align = 'center', height = 5}
+
 # After removal
 par(mfrow = c(1, 2))
-boxplot(train$Age.at.enrollment ~ train$Output, 
+boxplot(train$Age.at.enrollment ~ train$is_Graduated, 
         col = c('red', 'blue'),
         main = 'Age at enrollment',
-        xlab = 'Output', 
+        xlab = 'is_Graduated', 
         ylab = 'Age at enrollment')
-plot(density(train$Age.at.enrollment[train$Output == 'Graduate']), 
+plot(density(train$Age.at.enrollment[train$is_Graduated == 'Yes']), 
      col = 'blue',
      main = 'Age at enrollment', 
      xlab = 'Age at enrollment')
-lines(density(train$Age.at.enrollment[train$Output == 'Dropout']), 
+lines(density(train$Age.at.enrollment[train$is_Graduated == 'No']), 
       col = 'red')
 legend('topright', 
-       legend = c('Graduate', 'Dropout'), 
+       legend = c('Yes', 'No'), 
        col = c('blue', 'red'), 
        lty = 1)
 par(mfrow = c(1, 1))
+
 ```
 
 ### 4. Model building
@@ -625,32 +605,40 @@ We will now try to build different models using the training set,the models we w
 
 One of the first model we employ is logistic regression, this seems like an obvious choice given the fact that our research question revolves around finding a probability in a binary classification task.
 
-The core idea behind logistic regression is to model the relationship between one or more independent variables (features) and a binary dependent variable (outcome) using the logistic function. This function maps the output of a linear combination of the features to a probability score between 0 and 1.
+The core idea behind logistic regression is to model the relationship between one or more independent variables (features) and a binary dependent variable (outcome) using the logistic function. This function maps the graduated of a linear combination of the features to a probability score between 0 and 1.
 
 In logistic regression, the coefficients associated with each feature are estimated using maximum likelihood estimation. These coefficients represent the impact of each feature on the log-odds of the outcome variable.
 
-```{r, echo = F, message = F}
-library(MASS)
+```{r, echo = F, message = F, results = 'hide', warning = F}
 
 ######################################
 # Logistic Regression
 ######################################
-fit_logit_1 <- glm(Output ~ .,
+
+fit_logit_1 <- glm(is_Graduated ~ .,
             family = binomial,
             data = train)
+```
+Logistic Regression full
+```{r, echo = F}
 summary(fit_logit_1)
+```
+```{r, echo = F, message = F, results = 'hide', warning = F}
+
 fit_logit_2 <- step(fit_logit_1)
 summary(fit_logit_2)
-# par(mfrow = c(2, 2))
-# plot(fit_logit_2)
-# par(mfrow = c(1, 1))
 
 # Removing outliers
 index_outliers <- which(abs(scale(fit_logit_2$residuals)) > 2)
 train <- train[-index_outliers, ]
 fit_logit_3 <- update(fit_logit_2, 
                .~.)
+```
+Logistic Regression final
+```{r, echo = F}
 summary(fit_logit_3)
+```
+```{r, echo = F, message = F, results = 'hide', warning = F}
 
 # Predictions
 pred_logit <- predict(fit_logit_3, 
@@ -662,9 +650,11 @@ fit_int_1 <- update(fit_logit_3,
                           .~.*.)
 summary(fit_int_1)
 fit_int_2 <- step(fit_int_1)
+```
+Logistic Regression with interaction
+```{r, echo = F}
 summary(fit_int_2)
 
-# Predictions
 # Predictions
 pred_int <- predict(fit_int_2, 
                       newdata = test, 
@@ -678,6 +668,7 @@ In the Q-Q residuals plot, it is evident that the residuals are not normally dis
 
 
 ```{r, echo = F, out.width = '90%', out.height = '40%', fig.align = 'center'}
+
 kable(round(summary(fit_logit_3)$coefficients, 3), 
       caption = 'Logistic regression coefficients',
       align = 'r',
@@ -693,7 +684,6 @@ plot(fit_int_2)
 title('Logistic regression with interactions', outer = T, cex = 1.5, line = -2)
 par(mfrow = c(1, 1))
 
-
 ```
 
 ***Linear Discriminant Analysis (LDA)***
@@ -702,34 +692,34 @@ LDA is a classic statistical technique utilized in machine learning and pattern 
 
 At its core, LDA operates under the assumption that the data can be represented as multivariate Gaussian distributions and that the classes share the same covariance matrix. It seeks to find a projection of the data onto a lower-dimensional space while maximizing the separation between classes and minimizing the variance within each class.
 
-```{r, echo = F, out.height = '30%'}
+```{r, echo = F, message = F, out.height = '30%'}
+library(MASS)
+
 ######################################
 # Linear Discriminant Analysis (LDA)
 ######################################
 
-fit_lda <- lda(Output ~ ., 
+fit_lda <- lda(is_Graduated ~ ., 
                data = train)
-# Plot density of lda coefficients with respect to the output
+# Plot density of lda coefficients with respect to the is_Graduated
 plot(fit_lda, 
      type = 'both',
      main = 'LDA') # col not working
 
 
-# kable_styling(kable((round(fit_lda$scaling, 3)), 
-#       caption = 'LDA coefficients',
-#       align = 'c',
-#       format = 'latex',
-#       booktabs = T), 
-#       latex_options = c("hold_position", "scale_down"),
-#       full_width = F,
-#       position = "center",
-#       font_size = 9)
-
+kable_styling(kable((round(t(fit_lda$means), 3)),
+      caption = 'LDA means',
+      align = 'c',
+      format = 'latex',
+      booktabs = T),
+      latex_options = c("hold_position", "scale_down"),
+      full_width = F,
+      position = "center",
+      font_size = 9)
 
 # Predictions
 pred_lda <- predict(fit_lda, 
                     newdata = test)$posterior[, 2]
-
 
 ```
 
@@ -738,24 +728,25 @@ pred_lda <- predict(fit_lda,
 QDA is an extension of Linear Discriminant Analysis (LDA) used for classification tasks. While LDA assumes that different classes share the same covariance matrix, QDA relaxes this assumption, allowing each class to have its own covariance matrix.
 
 ```{r, echo = F}
+
 ######################################
 # Quadratic Discriminant Analysis (QDA)
 ######################################
 
-fit_qda <- qda(Output ~ ., 
+fit_qda <- qda(is_Graduated ~ ., 
                data = train)
 
-# kable_styling(kable((round(fit_qda$scaling, 3)),
-#       caption = 'QDA coefficients',
-#       align = 'c',
-#       format = 'latex',
-#       booktabs = T), 
-#       latex_options = c("hold_position", "scale_down"),
-#       full_width = F,
-#       position = "right",
-#       font_size = 9)
+kable_styling(kable((round(t(fit_qda$means), 3)),
+      caption = 'QDA coefficients',
+      align = 'c',
+      format = 'latex',
+      booktabs = T),
+      latex_options = c("hold_position", "scale_down"),
+      full_width = F,
+      position = "right",
+      font_size = 9)
 
-# Plot density of qda coefficients with respect to the output
+# Plot density of qda coefficients with respect to the is_Graduated
 pred_qda <- predict(fit_qda, 
                     newdata = test)$posterior[, 2]
 detach('package:MASS')
@@ -764,41 +755,41 @@ detach('package:MASS')
 ***Ridge Regression***
 
 Ridge regression is a regularization technique used in linear regression to mitigate the issues of multicollinearity and overfitting: it can be used to work with high dimensional data, which is why we find it valuable in our case
-```{r, echo = F, message= F}
+```{r, echo = F, message = F}
+
 ###########################
 # Ridge Regression
 ###########################
 
 library(glmnet)
 
-design_matrix_train <- model.matrix(Output ~ .,
-                                    data = train)
+design_matrix_train <- model.matrix(is_Graduated ~ .,
+                                    data = train)[, -1]
 
-design_matrix_test <- model.matrix(Output ~ .,
-                                   data = test)
+design_matrix_test <- model.matrix(is_Graduated ~ .,
+                                   data = test)[, -1]
 
 # Creating a grid for lamda
 grid <- 10^seq(2, -3, length = 100)
 
-# Adattamento del modello Ridge con regressione Binomiale
+# Ridge Regression with Binomial distribution
 ridge_model <- glmnet(x = design_matrix_train, 
-                      y = train$Output,
+                      y = train$is_Graduated,
                       alpha = 0, 
                       lambda = grid,
                       intercept = T, 
                       family = "binomial")
-# Find the best lambda
 
+# Find the best lambda
 predictions <- predict(ridge_model, 
                        newx = design_matrix_test, 
                        type = 'response')
-##########################
 
 accuracies <- c()
 
 for (i in 1:ncol(predictions)) {
   predicted_classes <- round(predictions[, i])
-  confusion_matrix <- table(predicted_classes, test$Output)
+  confusion_matrix <- table(predicted_classes, test$is_Graduated)
   accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
   accuracies <- c(accuracies, accuracy)
 }
@@ -809,6 +800,7 @@ pred_ridge <- matrix(predictions[, best_lambda_index_r],
 best_accuracy <- accuracies[best_lambda_index_r]
 
 colnames(pred_ridge) <- 'pred_ridge'
+
 ```
 
 ***Lasso Regression***
@@ -817,30 +809,29 @@ This regression techniques takes a slightly different approach by adding a penal
 
 This penalty term encourages sparsity in the coefficient vector, effectively driving some coefficients to exactly zero. As a result, Lasso regression not only helps in shrinking coefficient values but also performs variable selection by automatically excluding irrelevant features from the model.
 ```{r, echo = F}
+
 ###########################
 # Lasso Regression
 ###########################
 
-
-# Adattamento del modello Lasso con regressione Binomiale
+# Lasso Regression with Binomial distribution
 lasso_model <- glmnet(x = design_matrix_train, 
-                      y = train$Output,
+                      y = train$is_Graduated,
                       alpha = 1, 
                       lambda = grid,
                       intercept = T, 
                       family = "binomial")
-# Find the best lambda
 
+# Find the best lambda
 predictions <- predict(lasso_model, 
                        newx = design_matrix_test, 
                        type = 'response')
-##########################
 
 accuracies <- c()
 
 for (i in 1:ncol(predictions)) {
   predicted_classes <- round(predictions[, i])
-  confusion_matrix <- table(predicted_classes, test$Output)
+  confusion_matrix <- table(predicted_classes, test$is_Graduated)
   accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
   accuracies <- c(accuracies, accuracy)
 }
@@ -851,8 +842,11 @@ pred_lasso <- matrix(predictions[, best_lambda_index_l],
 best_accuracy <- accuracies[best_lambda_index_l]
 
 colnames(pred_lasso) <- 'pred_lasso'
+
 ```
-```{r, echo = F, fig.align = 'center'}
+
+```{r, echo = F, fig.align = 'center', warning = F}
+
 # Some fancy graphs about ridge model
 par(mfrow = c(1, 2))
 plot(ridge_model, xvar = 'lambda', label = T)
@@ -873,33 +867,33 @@ we are going to evaluate a our models by plotting ROC curve and by computing som
 
 
 ```{r, echo = F, message = F, warning = F}
+
 # Create roc curve for all models
 library(pROC)
 
 # Logit
-roc_out_logit <- roc(test$Output ~ pred_logit, 
-                     levels = c('Dropout', 'Graduate'))
+roc_out_logit <- roc(test$is_Graduated ~ pred_logit, 
+                     levels = c('No', 'Yes'))
 
-roc_out_int <- roc(test$Output ~ pred_int, 
-                     levels = c('Dropout', 'Graduate'))
+# Logit with interactions
+roc_out_int <- roc(test$is_Graduated ~ pred_int, 
+                     levels = c('No', 'Yes'))
 
 # LDA
-roc_out_lda <- roc(test$Output ~ pred_lda, 
-                   levels = c('Dropout', 'Graduate'))
-
+roc_out_lda <- roc(test$is_Graduated ~ pred_lda, 
+                   levels = c('No', 'Yes'))
 
 # QDA
-roc_out_qda <- roc(test$Output ~ pred_qda, 
-                   levels = c('Dropout', 'Graduate'))
-
+roc_out_qda <- roc(test$is_Graduated ~ pred_qda, 
+                   levels = c('No', 'Yes'))
 
 # Ridge
-roc_out_ridge <- roc(test$Output ~ pred_ridge, 
-                     levels = c('Dropout', 'Graduate'))
+roc_out_ridge <- roc(test$is_Graduated ~ pred_ridge, 
+                     levels = c('No', 'Yes'))
 
 # Lasso
-roc_out_lasso <- roc(test$Output ~ pred_lasso, 
-                     levels = c('Dropout', 'Graduate'))
+roc_out_lasso <- roc(test$is_Graduated ~ pred_lasso, 
+                     levels = c('No', 'Yes'))
 
 # Plotting the ROC curves and resize the plot on 'F Positive Rate' = c(1, 0)
 plot(roc_out_logit, 
@@ -934,6 +928,7 @@ legend('bottomright',
 
 
 ```{r, echo = F}
+
 # AUC
 auc_logit <- round(auc(roc_out_logit), 3)
 auc_int <- round(auc(roc_out_int), 3)
@@ -943,13 +938,12 @@ auc_ridge <- round(auc(roc_out_ridge), 3)
 auc_lasso <- round(auc(roc_out_lasso), 3)
 
 # Confusion matrix
-confusion_matrix_logit <- addmargins(table(round(pred_logit), test$Output), 2)
-confusion_matrix_int <- addmargins(table(round(pred_int), test$Output), 2)
-confusion_matrix_lda <- addmargins(table(round(pred_lda), test$Output), 2)
-confusion_matrix_qda <- addmargins(table(round(pred_qda), test$Output), 2)
-confusion_matrix_ridge <- addmargins(table(round(pred_ridge), test$Output), 2)
-confusion_matrix_lasso <- addmargins(table(round(pred_lasso), test$Output), 2)
-
+confusion_matrix_logit <- addmargins(table(round(pred_logit), test$is_Graduated), 2)
+confusion_matrix_int <- addmargins(table(round(pred_int), test$is_Graduated), 2)
+confusion_matrix_lda <- addmargins(table(round(pred_lda), test$is_Graduated), 2)
+confusion_matrix_qda <- addmargins(table(round(pred_qda), test$is_Graduated), 2)
+confusion_matrix_ridge <- addmargins(table(round(pred_ridge), test$is_Graduated), 2)
+confusion_matrix_lasso <- addmargins(table(round(pred_lasso), test$is_Graduated), 2)
 
 # Accuracy
 accuracy_logit <- sum(diag(confusion_matrix_logit)) / sum(confusion_matrix_logit[, -3])
@@ -996,8 +990,6 @@ results <- data.frame(Model = c('Logit', 'Interaction', 'LDA', 'QDA', 'Ridge', '
                       F1 = round(c(f1_logit, f1_int, f1_lda, 
                                    f1_qda, f1_ridge, f1_lasso), 3))
 
-
-
 kable_styling(kable(results,
       caption = 'Model evaluation',
       align = 'c',
@@ -1007,6 +999,7 @@ kable_styling(kable(results,
               full_width = F,
               # position = "center", 
               font_size = 9)
+
 ```
 
 ```{r, echo = F}
@@ -1037,7 +1030,7 @@ kable_styling(kable(results,
 
 APPENDIX A
 
-```{r echo=FALSE, message=FALSE}
+```{r echo = F, message = F}
 
 # Load necessary library
 library(knitr)
@@ -1054,7 +1047,7 @@ original_data <- data.frame(
                "Curricular units 2nd sem (enrolled)", "Curricular units 2nd sem (evaluations)", 
                "Curricular units 2nd sem (approved)", "Curricular units 2nd sem (grade)", 
                "Curricular units 2nd sem (without evaluations)", "Unemployment rate", 
-               "Inflation rate", "GDP", "output", "Previous qualification",
+               "Inflation rate", "GDP", "Output", "Previous qualification",
                "Nationality", "Mother's qualification", "Father's qualification",
                "Mother's occupation", "Father's occupation"),
   Description = c("Categorical variable indicating the marital status of the individual",
