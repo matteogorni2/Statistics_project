@@ -1,7 +1,8 @@
 ---
 title: "Stat_text"
-date: "2024-05-23"
-output: html_document
+date: "2024-07-11"
+author: "Di Pasquale Giuseppe, Gorni Selvestrini Matteo"
+output: pdf_document
 header-includes:
 - \usepackage{booktabs}
 - \usepackage{longtable}
@@ -22,7 +23,7 @@ header-includes:
 ------------------------------------------------------------------------
 
 
-### 1. Obtaining the Data
+**Obtaining the Data**
 
 The data was originally collected by the Polytechnic Institute of Portalegre in Portugal to build machine learning models that predict a student’s outcome based on various socioeconomic factors and academic performance. This was done to develop an analytics tool for the tutoring program to direct their efforts more effectively. We found a copy of it on Kaggle.
 
@@ -40,40 +41,25 @@ Given that the number of libraries we can use is limited to those covered during
 
 A detailed description of the original dataset can be found in Appendix A.
 
-### Step 2. Data Preprocessing
+**Data Preprocessing**
 
-Let's start by loading our data and changing the graduated column in order to represent our research question correctly: we are going to rename the 'Output' variable into 'is.graduated' and we make it binary, 'yes' labels will correspond to the old 'Graduate' labels, while all the 'Enrolled' and 'Dropout' labels will be converted into 'no' 
+Let's start by loading our data and changing the graduated column in order to represent our research question correctly: we are going to rename the 'Output' variable into 'is_Graduated' and we make it binary, 'Yes' labels will correspond to the old 'Graduate' labels, while all the 'Enrolled' and 'Dropout' labels will be converted into 'No'.
 
 ```{r, results = 'hide'}
 
-data <- read.csv("C:\\Users\\gorni\\OneDrive\\Desktop\\statistical learning\\student_data.csv", 
+data <- read.csv('~/Downloads/Dropout and Success/student_data.csv', 
                  sep = ';')
 str(data)
 
-# Rename Colums
+# Rename Columns
 names(data)[names(data) == 'Nacionality'] <- 'Nationality'
+names(data)[names(data) == 'Marital.status'] <- 'Married'
 names(data)[names(data) == 'Output'] <- 'is_Graduated'
 
-# Remove 'Enrolled' to have a binomial problem
+# Rename 'Enrolled' to have a binomial problem
 data$is_Graduated[which(data$is_Graduated == 'Enrolled' | 
                        data$is_Graduated == 'Dropout')] <- 'No'
 data$is_Graduated[which(data$is_Graduated == 'Graduate')] <- 'Yes'
-
-```
-
-```{r, include = F}
-library(knitr)
-library(kableExtra)
-
-# Remove useless columns
-data <- data[, -which(grepl('Application', colnames(data)) | 
-                        grepl('Tuition', colnames(data)) |
-                        grepl('Debtor', colnames(data)) |
-                        grepl('Unemployment', colnames(data)) |
-                        grepl('Inflation', colnames(data)) |
-                        grepl('GDP', colnames(data)) |
-                        grepl('Curricular', colnames(data)) |
-                        grepl('evening', colnames(data)))]
 
 ```
 
@@ -93,11 +79,13 @@ We changed the labeling criteria in some of our variables in order to increase m
 ```{r, echo = F}
 
 ## Marital status
-index_single <- which(data$Marital.status == 1) # Single
-index_married <- which(data$Marital.status == 2) # Married
-data$Marital.status[index_single] <- 'Single'
-data$Marital.status[index_married] <- 'Married'
-data$Marital.status[-c(index_single, index_married)] <- 'Others'
+index_single <- which(data$Married == 1) # Single
+# index_married <- which(data$Married == 2) # Married
+data$Married[index_single] <- 'No'
+# data$Married[index_married] <- 'Married'
+# data$Married[-c(index_single, index_married)] <- 'Others'
+data$Married[-index_single] <- 'Yes'
+
 ```
 
 ```{r, echo = F}
@@ -114,7 +102,7 @@ index_m_white <- which(data$Mother.s.occupation == 2 |
                          data$Mother.s.occupation == 6 |
                          data$Mother.s.occupation == 14 | # Armed forces Officers
                          data$Mother.s.occupation == 15 | # Armed forces sergeants
-                         data$Mother.s.occupation ==  17 |
+                         data$Mother.s.occupation == 17 |
                          data$Mother.s.occupation == 19 |
                          data$Mother.s.occupation == 20 |
                          data$Mother.s.occupation == 21 |
@@ -144,7 +132,7 @@ index_f_white <- which(data$Father.s.occupation == 2 |
                          data$Father.s.occupation == 6 |
                          data$Father.s.occupation == 14 | # Armed forces Officers
                          data$Father.s.occupation == 15 | # Armed forces sergeants
-                         data$Father.s.occupation ==  17 |
+                         data$Father.s.occupation == 17 |
                          data$Father.s.occupation == 19 |
                          data$Father.s.occupation == 20 |
                          data$Father.s.occupation == 21 |
@@ -269,8 +257,10 @@ data$Nationality[data$Nationality == 1] <- 'Portoguese'
 ```{r, include = F}
 
 # Change variable's levels
-data$Marital.status <- factor(data$Marital.status, 
-                              levels = c('Single', 'Married', 'Others'))
+# data$Married <- factor(data$Married, 
+#                               levels = c('Single', 'Married', 'Others'))
+data$Married <- factor(data$Married, 
+                              levels = c('No', 'Yes'))
 data$Course <- factor(data$Course, 
                       levels = c('Stem', 'No Stem'))
 data$Previous.qualification <- factor(data$Previous.qualification, 
@@ -290,20 +280,20 @@ data$Gender <- factor(data$Gender,
 data$is_Graduated <- factor(data$is_Graduated,
                       levels = c('No', 'Yes'))
 
-
-table(data$Nationality, data$International)
-data <- data[, -which(colnames(data) == 'International')]
-
 ```
+
 
 Marital status
 
-Categorical variable with 5 values indicating the marital status of the individual.
+Categorical variable with 6 values indicating the marital status of the individual.
 Given that the majority of the vast majority of students is single and only a few of them belong to one of the other categories we merged them under the variable 'Others', we also decided to merge 'divorced' and 'legally separated' since the difference between the two instances is not relevant for our analysis.
 
-```{r, echo = F}
+```{r, echo = F, message = F}
+library(knitr)
+library(xtable)
+library(kableExtra)
 
-kable_styling(kable(table(data$Marital.status),
+kable_styling(kable(table(data$Married),
                     caption = "Marital status",
                     col.names = c("Status", "Freq"),
                     align = 'c',
@@ -337,7 +327,7 @@ kable_styling(kable(t_occ,
 
 Mother/Father/Student education
 
-Categorical variable indicating the level of each parents’ qualification as well as the student's. Again, we are dealing with many categorical variables, so we decided to merge them based on whether they have an completed an higher education cycle and if they have finished high school or not
+Categorical variable indicating the level of each parents’ qualification as well as the student's. Again, we are dealing with many categorical variables, so we decided to merge them based on whether they have an completed an higher education cycle and if they have finished high school or not.
 
 ```{r, echo = F}
 
@@ -359,7 +349,7 @@ kable_styling(kable(t_qual,
 
 Courses
 
-Categorical variable representing the course chosen at enrollment, we originally had 17 different courses, we decided to relabel the courses using whether they are STEM subjects or not as a splitting criterion
+Categorical variable representing the course chosen at enrollment, we originally had 17 different courses, we decided to relabel the courses using whether they are STEM subjects or not as a splitting criterion.
 
 ```{r, echo = F}
 
@@ -397,27 +387,43 @@ kable_styling(kable(table(data$Nationality),
 
 Given that to build our model we are going to use only information that was present at enrollment time there are some features which are not useful and will therefore be removed.
 
-1 Curricular data: we removed all information concerning student performance over the span of three years since it doesn't help us answer our research question
+- Curricular data: we removed all information concerning student performance over the span of three years since it doesn't help us answer our research question
 
-2 Application mode/ application order: the original paper didn't offer a clear indication about the various labels of this feature, furthermore we don't believe them to be of any interest as far as our research question goes.
+- Application mode/ application order: the original paper didn't offer a clear indication about the various labels of this feature, furthermore we don't believe them to be of any interest as far as our research question goes.
 
-3 Macroeconomics data (Inflation rate, GDP, Unemployment rate): these economic indicators were taken over the course of the three years data collection period, we also don't believe them to be of any use in answering our research question
+- Macroeconomics data (Inflation rate, GDP, Unemployment rate): these economic indicators were taken over the course of the three years data collection period, we also don't believe them to be of any use in answering our research question
 
-4 Tuition fees up do date
+- Tuition fees up do date
+
+```{r, echo = F, message = F}
+
+# Remove useless columns
+data <- data[, -which(grepl('Application', colnames(data)) | 
+                        grepl('Tuition', colnames(data)) |
+                        grepl('Debtor', colnames(data)) |
+                        grepl('Unemployment', colnames(data)) |
+                        grepl('Inflation', colnames(data)) |
+                        grepl('GDP', colnames(data)) |
+                        grepl('Curricular', colnames(data)) |
+                        grepl('evening', colnames(data)))]
+
+```
+
+We also removed the 'International' variable since it was rendundant.
+```{r}
+table(data$Nationality, data$International)
+data <- data[, -which(colnames(data) == 'International')]
+
+```
 
 
-
-### 3. Exploratory Data Analysis
-
+**Exploratory Data Analysis**
 
 
+```{r tab_dio, echo = F}
 
-```{r, echo = F}
-library(knitr)
-library(xtable)
-
-t1 <- kable(addmargins(table(data$Marital.status, data$is_Graduated), 2), 
-            format = "latex", booktabs = T)
+t1 <- kable(addmargins(table(data$Married, data$is_Graduated), 2), 
+            format = "latex", booktabs = T) 
 t2 <- kable(addmargins(table(data$Course, data$is_Graduated), 2), 
             format = "latex", booktabs = T)
 t3 <- kable(addmargins(table(data$Previous.qualification, data$is_Graduated), 2), 
@@ -444,6 +450,7 @@ t12 <- kable(addmargins(table(data$Gender, data$is_Graduated), 2),
 ```
 *AGGIUNGERE LINK TABELLE DI RIFERIMENTO*
 
+
 To perform EDA we plot contingency tables for our categorical variables, looking at them gives us some insights: 
 the majority of single people manages to graduate in time, the same can't be said for the other two categories.
 
@@ -469,57 +476,57 @@ add info about age at enrollment
 cat(c("\\begin{table}[!htb]
     \\fontsize{9}{11}\\selectfont
     \\begin{minipage}{.5\\linewidth}
-      \\caption{Marital status VS is_Graduated}
+      \\caption{Marital status VS is Graduated}
       \\centering",
         t1,
     "\\end{minipage}%
     \\begin{minipage}{.5\\linewidth}
       \\centering
-        \\caption{Previous qualification VS is_Graduated}",
+        \\caption{Previous qualification VS is Graduated}",
         t3,
     "\\end{minipage}
     \\begin{minipage}{.5\\linewidth}
-      \\caption{Course VS is_Graduated}
+      \\caption{Course VS is Graduated}
       \\centering",
         t2,
     "\\end{minipage}%
     \\begin{minipage}{.5\\linewidth}
       \\centering
-        \\caption{Nationality VS is_Graduated}",
+        \\caption{Nationality VS is Graduated}",
         t4,
     "\\end{minipage}
     \\begin{minipage}{.5\\linewidth}
-      \\caption{Mother's qualification VS is_Graduated}
+      \\caption{Mother's qualification VS is Graduated}
       \\centering",
         t5,
     "\\end{minipage}%
     \\begin{minipage}{.5\\linewidth}
       \\centering
-        \\caption{Father's qualification VS is_Graduated}",
+        \\caption{Father's qualification VS is Graduated}",
         t6,
     "\\end{minipage}
     \\begin{minipage}{.5\\linewidth}
-      \\caption{Mother's occupation VS is_Graduated}
+      \\caption{Mother's occupation VS is Graduated}
       \\centering",
         t7,
     "\\end{minipage}%
     \\begin{minipage}{.5\\linewidth}
       \\centering
-        \\caption{Father's occupation VS is_Graduated}",
+        \\caption{Father's occupation VS is Graduated}",
         t8,
     "\\end{minipage}
     \\begin{minipage}{.5\\linewidth}
-      \\caption{Displaced VS is_Graduated}
+      \\caption{Displaced VS is Graduated}
       \\centering",
         t9,
     "\\end{minipage}%
     \\begin{minipage}{.5\\linewidth}
       \\centering
-        \\caption{Education special VS is_Graduated}",
+        \\caption{Education special VS is Graduated}",
         t10,
     "\\end{minipage}
     \\begin{minipage}{.5\\linewidth}
-      \\caption{Scholarship VS is_Graduated}
+      \\caption{Scholarship VS is Graduated}
       \\centering",
         t11,
     "\\end{minipage}
@@ -610,7 +617,7 @@ The core idea behind logistic regression is to model the relationship between on
 
 In logistic regression, the coefficients associated with each feature are estimated using maximum likelihood estimation. These coefficients represent the impact of each feature on the log-odds of the outcome variable.
 
-```{r, echo = F, message = F, results = 'hide', warning = F}
+```{r, echo = T, message = F, results = 'hide', warning = F}
 
 ######################################
 # Logistic Regression
@@ -619,12 +626,10 @@ In logistic regression, the coefficients associated with each feature are estima
 fit_logit_1 <- glm(is_Graduated ~ .,
             family = binomial,
             data = train)
-```
-Logistic Regression full
-```{r, echo = F}
 summary(fit_logit_1)
 ```
-```{r, echo = F, message = F, results = 'hide', warning = F}
+We keep only significant variables in the model and then remove outliers from the dataset.
+```{r, echo = T, message = F, results = 'hide', warning = F}
 
 fit_logit_2 <- step(fit_logit_1)
 summary(fit_logit_2)
@@ -632,11 +637,14 @@ summary(fit_logit_2)
 # Removing outliers
 index_outliers <- which(abs(scale(fit_logit_2$residuals)) > 2)
 train <- train[-index_outliers, ]
+
+```
+
+```{r, echo = T}
+
+# Final model
 fit_logit_3 <- update(fit_logit_2, 
                .~.)
-```
-Logistic Regression final
-```{r, echo = F}
 summary(fit_logit_3)
 ```
 ```{r, echo = F, message = F, results = 'hide', warning = F}
@@ -670,12 +678,12 @@ In the Q-Q residuals plot, it is evident that the residuals are not normally dis
 
 ```{r, echo = F, out.width = '90%', out.height = '40%', fig.align = 'center'}
 
-kable(round(summary(fit_logit_3)$coefficients, 3), 
-      caption = 'Logistic regression coefficients',
-      align = 'r',
-      format = 'latex',
-      booktabs = T, 
-      font_size = 6)
+# kable(round(summary(fit_logit_3)$coefficients, 3), 
+#       caption = 'Logistic regression coefficients',
+#       align = 'r',
+#       format = 'latex',
+#       booktabs = T, 
+#       font_size = 6)
 
 par(mfrow = c(2, 2))
 plot(fit_logit_3)
@@ -702,14 +710,14 @@ library(MASS)
 
 fit_lda <- lda(is_Graduated ~ ., 
                data = train)
-# Plot density of lda coefficients with respect to the is_Graduated
+# Plot density of lda results with respect to the is_Graduated
 plot(fit_lda, 
      type = 'both',
      main = 'LDA') # col not working
 
 
-kable_styling(kable((round(t(fit_lda$means), 3)),
-      caption = 'LDA means',
+kable_styling(kable((round(t(fit_lda$scaling), 3)),
+      caption = 'LDA coefficients',
       align = 'c',
       format = 'latex',
       booktabs = T),
@@ -736,16 +744,6 @@ QDA is an extension of Linear Discriminant Analysis (LDA) used for classificatio
 
 fit_qda <- qda(is_Graduated ~ ., 
                data = train)
-
-kable_styling(kable((round(t(fit_qda$means), 3)),
-      caption = 'QDA coefficients',
-      align = 'c',
-      format = 'latex',
-      booktabs = T),
-      latex_options = c("hold_position", "scale_down"),
-      full_width = F,
-      position = "right",
-      font_size = 9)
 
 # Plot density of qda coefficients with respect to the is_Graduated
 pred_qda <- predict(fit_qda, 
@@ -1004,29 +1002,32 @@ kable_styling(kable(results,
 ```
 
 ```{r, echo = F}
-# coef_matrix <- matrix(0, 
-#                       ncol = 4, 
-#                       nrow = 25)
-# coef_names <- names(coef(fit_logit_1))
-# coef1 <- coef(fit_logit_1)
-# coef2 <- coef(fit_logit_3)
-# coef3 <- coef(ridge_model)[, best_lambda_index_r]
-# coef4 <- coef(lasso_model)[, best_lambda_index_l]
-# 
-# coef_matrix[, 1] <- coef1
-# for(i in 1:25){
-#   if(coef_names[i] %in% names(coef2)){
-#     coef_matrix[i, 2] <- coef2[which(names(coef2) == coef_names[i])]
-#   }
-# }
-# coef_matrix[, 3] <- coef3[-2]
-# coef_matrix[, 4] <- coef4[-2]
-# 
-# coef_df <- data.frame(Logit_full = coef_matrix[, 1],
-#                       Logit_final = coef_matrix[, 2],
-#                       Ridge = coef_matrix[, 3],
-#                       Lasso = coef_matrix[, 4], 
-#                       row.names = coef_names)
+coef_matrix <- matrix(0,
+                      ncol = 5,
+                      nrow = 19)
+coef_names <- names(coef(fit_logit_1))
+coef1 <- coef(fit_logit_1)
+coef2 <- coef(fit_logit_3)
+coef3 <- coef(ridge_model)[, best_lambda_index_r]
+coef4 <- coef(lasso_model)[, best_lambda_index_l]
+coef5 <- c(0, coef(fit_lda))
+
+coef_matrix[, 1] <- coef1
+for(i in 1:nrow(coef_matrix)){
+  if(coef_names[i] %in% names(coef2)){
+    coef_matrix[i, 2] <- coef2[which(names(coef2) == coef_names[i])]
+  }
+}
+coef_matrix[, 3] <- coef3
+coef_matrix[, 4] <- coef4
+coef_matrix[, 5] <- coef5
+
+coef_df <- data.frame(Logit_full = coef_matrix[, 1],
+                      Logit_final = coef_matrix[, 2],
+                      Ridge = coef_matrix[, 3],
+                      Lasso = coef_matrix[, 4],
+                      LDA = coef_matrix[, 5], 
+                      row.names = coef_names)
 ```
 
 APPENDIX A
@@ -1038,7 +1039,7 @@ library(knitr)
 
 # Create a data frame that represents your dataset
 original_data <- data.frame(
-  Variable = c("Marital status", "Application mode", "Application order", "Course", 
+  Variable = c("Married", "Application mode", "Application order", "Course", 
                "evening attendance", "Displaced", "Educational special needs", 
                "Tuition fees up to date", "Gender", "Scholarship holder", 
                "Age at enrollment", "International", "Curricular units 1st sem (credited)", 
