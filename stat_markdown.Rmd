@@ -1,8 +1,11 @@
 ---
-title: "Stat_text"
+title: "Statistical learning final project"
 date: "2024-07-11"
-author: "Di Pasquale Giuseppe, Gorni Selvestrini Matteo"
-output: pdf_document
+author: "Di Pasquale Giuseppe, Gorni Silvestrini Matteo"
+output: 
+    pdf_document:
+      toc: true
+      number_sections: true
 header-includes:
 - \usepackage{booktabs}
 - \usepackage{longtable}
@@ -22,10 +25,10 @@ header-includes:
 
 ------------------------------------------------------------------------
 
+\newpage
+# Introduction
 
-**Obtaining the Data**
-
-The data was originally collected by the Polytechnic Institute of Portalegre in Portugal to build machine learning models that predict a student’s outcome based on various socioeconomic factors and academic performance. This was done to develop an analytics tool for the tutoring program to direct their efforts more effectively. We found a copy of it on Kaggle.
+The data was originally collected by the Polytechnic Institute of Portalegre in Portugal to build machine learning models that predict a student’s outcome based on various socioeconomic factors and academic performance. This was done to develop an analytics tool for the tutoring program to direct their efforts more effectively.
 
 The dataset was created from several disjoint databases and includes students enrolled in different undergraduate degrees, such as agronomy, design, education, nursing, journalism, management, social service, and technologies, it consists of 4424 records with 35 features.
 
@@ -37,11 +40,11 @@ The prediction problem is formulated as a three-category classification task, wh
 
 According to the literature in the field, there is no agreed-upon definition of what constitutes a dropout. In this work, the authors defined dropouts from a micro-perspective, considering field and institution changes as dropouts regardless of when they occur. This approach results in much higher dropout rates than the macro-perspective, which considers only students who leave the higher education system without a degree.
 
-Given that the number of libraries we can use is limited to those covered during the course, we decided to employ this dataset to answer a different research question. Our analysis will focus on building a model to assign a probability score to new students. This score will quantify the likelihood that a student will finish their course within a three-year timeframe based on data collected at enrollment.
+Given that the number of libraries we can use is limited to those covered during the course, we decided to employ this dataset to answer a different research question. Our analysis will focus on building a model to assign a probability score to new students. This score will quantify the likelihood that a student will finish their course within a three-year timeframe based on data collected at enrollment and evaluating how much it may effect the scholarship award.
 
 A detailed description of the original dataset can be found in Appendix A.
 
-**Data Preprocessing**
+# Data Preprocessing
 
 Let's start by loading our data and changing the graduated column in order to represent our research question correctly: we are going to rename the 'Output' variable into 'is_Graduated' and we make it binary, 'Yes' labels will correspond to the old 'Graduate' labels, while all the 'Enrolled' and 'Dropout' labels will be converted into 'No'.
 
@@ -63,15 +66,16 @@ data$is_Graduated[which(data$is_Graduated == 'Graduate')] <- 'Yes'
 
 ```
 
-Missing values:
+***Missing values and data balence check:***
 
-there were no missing values in the dataset.
+There were no missing values and the dataset is balanced.
 
 ```{r}
 sum(is.na(data))
+table(data$is_Graduated)
 ```
 
-**Data preprocessing**
+## Relabelling variables
 
 We changed the labeling criteria in some of our variables in order to increase model explainability, in the following section we will discuss and showcase our changes.
 
@@ -283,10 +287,10 @@ data$is_Graduated <- factor(data$is_Graduated,
 ```
 
 
-Marital status
+***Marital status:***
 
 Categorical variable with 6 values indicating the marital status of the individual.
-Given that the majority of the vast majority of students is single and only a few of them belong to one of the other categories we merged them under the variable 'Others', we also decided to merge 'divorced' and 'legally separated' since the difference between the two instances is not relevant for our analysis.
+Given that the majority of the vast majority of students is single and only a few of them belong to one of the other categories we decided to create a binary variable indicating if a student is single or not.
 
 ```{r, echo = F, message = F}
 library(knitr)
@@ -305,7 +309,7 @@ kable_styling(kable(table(data$Married),
 
 ```
 
-Mother/Father occupation
+***Mother/Father occupation:***
 
 Categorical variables indicating the mother and father occupation respectively, while the original dataset had 32 labels for all kinds of different jobs, we decided to merge some of the labels and make this a 3-label categorical variable. Jobs were split based on a White/Blue collar distinction, as shown in the table below.
 
@@ -315,7 +319,7 @@ t_occ <- data.frame(Occupation = levels(data$Mother.s.occupation),
                     Mother = matrix(table(data$Mother.s.occupation)), 
                     Father = matrix(table(data$Father.s.occupation)))
 kable_styling(kable(t_occ,
-                    caption = "Parent's occupation",
+                    caption = "Parental occupation",
                     align = 'c',
                     format = "latex",
                     booktabs = T),
@@ -325,7 +329,7 @@ kable_styling(kable(t_occ,
 
 ```
 
-Mother/Father/Student education
+***Mother/Father/Student qualification:***
 
 Categorical variable indicating the level of each parents’ qualification as well as the student's. Again, we are dealing with many categorical variables, so we decided to merge them based on whether they have an completed an higher education cycle and if they have finished high school or not.
 
@@ -346,10 +350,9 @@ kable_styling(kable(t_qual,
 
 ```              
 
+***Course:***
 
-Courses
-
-Categorical variable representing the course chosen at enrollment, we originally had 17 different courses, we decided to relabel the courses using whether they are STEM subjects or not as a splitting criterion.
+Categorical variable representing the course chosen at enrollment, we originally had 17 different courses, we decided to relabel the courses based on whether they belong to the STEM area or not.
 
 ```{r, echo = F}
 
@@ -365,9 +368,9 @@ kable_styling(kable(table(data$Course),
 
 ```
 
-Nationality:
+***Nationality:***
 
-categorical variable representing a students nationality: looking at the data we saw that while we had a lot of labels (one for each nationality), the vast majority of people were Portuguese, therefore we labeled data in the following way
+Categorical variable representing a students nationality: looking at the data we saw that while we had a lot of labels (one for each nationality), the vast majority of people were Portuguese, therefore we labeled data in the following way
 
 ```{r, echo = F}
 
@@ -383,7 +386,7 @@ kable_styling(kable(table(data$Nationality),
 
 ```
 
-**FEATURE REMOVAL**
+## Feature removal
 
 Given that to build our model we are going to use only information that was present at enrollment time there are some features which are not useful and will therefore be removed.
 
@@ -391,9 +394,9 @@ Given that to build our model we are going to use only information that was pres
 
 - Application mode/ application order: the original paper didn't offer a clear indication about the various labels of this feature, furthermore we don't believe them to be of any interest as far as our research question goes.
 
-- Macroeconomics data (Inflation rate, GDP, Unemployment rate): these economic indicators were taken over the course of the three years data collection period, we also don't believe them to be of any use in answering our research question
+- Macroeconomics data (Inflation rate, GDP, Unemployment rate): these economic indicators were taken over the course of the three years data collection period, we also don't believe them to be of any use in answering our research question.
 
-- Tuition fees up do date
+- Tuition fees up do date.
 
 ```{r, echo = F, message = F}
 
@@ -417,12 +420,12 @@ data <- data[, -which(colnames(data) == 'International')]
 ```
 
 
-**Exploratory Data Analysis**
+# Exploratory Data Analysis
 
 
 ```{r tab_dio, echo = F}
 
-t1 <- kable(addmargins(table(data$Married, data$is_Graduated), 2), 
+t1  <- kable(addmargins(table(data$Married, data$is_Graduated), 2), 
             format = "latex", booktabs = T) 
 t2 <- kable(addmargins(table(data$Course, data$is_Graduated), 2), 
             format = "latex", booktabs = T)
@@ -448,28 +451,28 @@ t12 <- kable(addmargins(table(data$Gender, data$is_Graduated), 2),
              format = "latex", booktabs = T)
 
 ```
-*AGGIUNGERE LINK TABELLE DI RIFERIMENTO*
 
 
-To perform EDA we plot contingency tables for our categorical variables, looking at them gives us some insights: 
-the majority of single people manages to graduate in time, the same can't be said for the other two categories.
 
-People who enroll after completing secondary score tend to graduate in time more compared to oter categories (portalegre university allows some students to enroll courses without having having an high-school diploma).
+Most of our dataset's features are categorical, therefore we will plot the data in the form of contingency tables. This procedure allows us to make some interesting observations:
 
-Although there are more students enrolled in non-STEM courses (2,702 vs 1,722), the graduation rate is higher for those in STEM courses (52.3% vs 48.4%).
+- Most people who enroll are single and at the same time are more likely to graduate than others (51.4% vs 38.4%); (table 6)
 
-It's worth noting that mothers generally have a higher level of education compared to fathers. Specifically, 234 mothers versus 3,076 fathers did not complete high school. Interestingly, regardless of parents' educational background, students with parents who graduated from college have a lower graduation rate compared to those whose parents have lower levels of education.
+- People who enroll after completing secondary school tend to graduate in time more often than those who do not (note: Portalegre's university allows some students to attend courses without having an high-school diploma); (table 7)
 
-There is no significant difference in graduation rates based on the parents' professions, except for those marked 'Other,' who have a lower on-time graduation rate.
+- Although there are more students enrolled in non-STEM courses (2,702 vs 1,722), the graduation rate is higher for those in STEM courses (52.3% vs 48.4%); (table 8)
 
-Students who left their parents home to study appear (i.e. the 'displaced' variable) have a higher graduation rate compared to those who are not.
+- Mothers generally have a higher level of education compared to fathers. Specifically, 3076 fathers do not have an high school diploma, the same can be said only for 234 mothers, this does not seem to affect graduation rates of their children; (table 10)
 
-Students who receive a scholarship have a higher graduation rate than those who do not (76.0% vs 41.3%).
 
-Finally, it is evident that women are significantly more likely than men to graduate on time (57.9% vs 35.2%).
-add info about age at enrollment
+- Students who left their parents home to study (i.e. the 'displaced' variable) have a higher graduation rate compared to those who did not (54.6% vs 44.3%); (table 14)
 
-*Da valutare di togliere le tabelle prevedenti e tenere solo queste che contengono le stesse informazioni più la differenza tra i due gruppi, e sopra fare solo una descrizione di come sono stati raggruppati i gruppi.*
+- Students who receive a scholarship have a higher graduation rate than those who do not (76.0% vs 41.3%); (table 16)
+
+- Women seem graduate on time much more than men do (57.9% vs 35.2%). (table 17)
+
+- From the figures below we can see that 'Age at enrollment' have not a normal distribution, we can see that the distribution of the age at enrollment is different for students who graduate and those who do not. Both have an high right tail with more outliers, but the distribution of graduate on time is more concentrated around the mean value (20 years). 
+
 
 ```{r sample, echo = F, results = 'asis'}
 
@@ -529,17 +532,47 @@ cat(c("\\begin{table}[!htb]
       \\caption{Scholarship VS is Graduated}
       \\centering",
         t11,
+    "\\end{minipage}%
+    \\begin{minipage}{.5\\linewidth}
+      \\centering
+        \\caption{Gender VS is Graduated}",
+        t12,
     "\\end{minipage}
 \\end{table}"
 ))  
 ```
+```{r, echo = F}
+
+par(mfrow = c(1, 2))
+boxplot(data$Age.at.enrollment ~ data$is_Graduated, 
+        col = c('red', 'blue'),
+        # main = 'Age at enrollment',
+        xlab = 'is_Graduated', 
+        ylab = 'Age at enrollment')
+plot(density(data$Age.at.enrollment[data$is_Graduated == 'Yes']), 
+     col = 'blue',
+     main = '',
+     xlab = 'Age at enrollment')
+lines(density(data$Age.at.enrollment[data$is_Graduated == 'No']), 
+      col = 'red')
+legend('topright', 
+       legend = c('Yes', 'No'), 
+       col = c('blue', 'red'), 
+       lty = 1)
+title('Age at enrollment', outer = T, cex = 1.5, line = -2)
+par(mfrow = c(1, 1))
+
+```
+
+\newpage
+## Outliers detection and removal
+
+As we have seen in the previous section, the distribution of the age at enrollment contains a lot of outliers. We will now remove these outliers from the training set only, in order to preserve test set to simulate a real-world scenario. This will allow us to build a more robust model that generalizes better to unseen data. 
 
 
-**OUTLIERS DETECTION AND REMOVAL**
+We can see that there are more outliers left, but we decided to keep them to stay more faithful to the original data distribution.
 
-We looked for outliers among numerical features in our data, 'age at enrollment' was the only one that presented some. Since it have not a normal distribution, we decided to remove all values which are outliers in the boxplot of values condictioned by the graduateds. We then perform a train-test split before and remove the outliers from the training set only: keeping outliers in the test set improves the ecological validity of the model and reduces overfitting.
-
-```{r, echo = F, fig.align = 'center', out.height = '40%'}
+```{r, echo = F, fig.align = 'center', out.height = '40%', fig.show = 'hide'}
 
 # Train test split
 set.seed(71)
@@ -552,11 +585,12 @@ test <- data[-index, ]
 par(mfrow = c(1, 2))
 boxplot(train$Age.at.enrollment ~ train$is_Graduated, 
         col = c('red', 'blue'),
-        main = 'Age at enrollment',
-        xlab = 'is_Graduated')
+        # main = 'Age at enrollment',
+        xlab = 'is_Graduated', 
+        ylab = 'Age at enrollment')
 plot(density(train$Age.at.enrollment[train$is_Graduated == 'Yes']), 
      col = 'blue',
-     main = 'Age at enrollment', 
+     main = '',
      xlab = 'Age at enrollment')
 lines(density(train$Age.at.enrollment[train$is_Graduated == 'No']), 
       col = 'red')
@@ -564,6 +598,7 @@ legend('topright',
        legend = c('Yes', 'No'), 
        col = c('blue', 'red'), 
        lty = 1)
+title('Age at enrollment', outer = T, cex = 1.5, line = -2)
 par(mfrow = c(1, 1))
 
 ```
@@ -589,12 +624,12 @@ train <- train[-c(index_age_drop,
 par(mfrow = c(1, 2))
 boxplot(train$Age.at.enrollment ~ train$is_Graduated, 
         col = c('red', 'blue'),
-        main = 'Age at enrollment',
+        # main = 'Age at enrollment',
         xlab = 'is_Graduated', 
         ylab = 'Age at enrollment')
 plot(density(train$Age.at.enrollment[train$is_Graduated == 'Yes']), 
      col = 'blue',
-     main = 'Age at enrollment', 
+     main = '',
      xlab = 'Age at enrollment')
 lines(density(train$Age.at.enrollment[train$is_Graduated == 'No']), 
       col = 'red')
@@ -602,35 +637,39 @@ legend('topright',
        legend = c('Yes', 'No'), 
        col = c('blue', 'red'), 
        lty = 1)
+
+title('Age at enrollment', outer = T, cex = 1.5, line = -2)
 par(mfrow = c(1, 1))
 
 ```
 
-### 4. Model building
-We will now try to build different models using the training set,the models we will use include logistic regression, linear discriminant analysis (LDA), quadratic discriminant analysis (QDA), ridge regression, and lasso regression.
+# Model building
 
-**Logistic Regression**
+We will now try to build different models using the training set, the models we will use include logistic regression, linear discriminant analysis (LDA), quadratic discriminant analysis (QDA), ridge regression and lasso regression. We will then evaluate the performance of these models using the test set working with the confusion matrix and the ROC curve and finally we compare the relative coefficients.
 
-One of the first model we employ is logistic regression, this seems like an obvious choice given the fact that our research question revolves around finding a probability in a binary classification task.
+## Logistic Regression
 
-The core idea behind logistic regression is to model the relationship between one or more independent variables (features) and a binary dependent variable (outcome) using the logistic function. This function maps the graduated of a linear combination of the features to a probability score between 0 and 1.
+We start our analysis by considering the *Logistic Regression model*, this seems like a very robust choice given the fact that our research question revolves around finding a probability in a binary classification task.
+
+The core idea behind logistic regression is to model the relationship between one or more independent variables (features) and a binary dependent variable (outcome) using the logistic function. This function maps a linear combination of the features to a probability score between 0 and 1.
 
 In logistic regression, the coefficients associated with each feature are estimated using maximum likelihood estimation. These coefficients represent the impact of each feature on the log-odds of the outcome variable.
 
-```{r, echo = T, message = F, results = 'hide', warning = F}
 
+```{r, echo = F}
 ######################################
 # Logistic Regression
 ######################################
+```
+
+```{r, echo = T, message = F, results = 'hide', warning = F}
 
 fit_logit_1 <- glm(is_Graduated ~ .,
             family = binomial,
             data = train)
 summary(fit_logit_1)
-```
-We keep only significant variables in the model and then remove outliers from the dataset.
-```{r, echo = T, message = F, results = 'hide', warning = F}
 
+# Keep only significant variables
 fit_logit_2 <- step(fit_logit_1)
 summary(fit_logit_2)
 
@@ -647,6 +686,22 @@ fit_logit_3 <- update(fit_logit_2,
                .~.)
 summary(fit_logit_3)
 ```
+
+One very important feature of logistic regression is that it is possible to look is certain features have a significant influence over the outcome variable. Looking at the model we just built we can see that many of the predictions we made during exploratory data analysis hold true:
+
+- being in a non-STEM course is associated with a decrease of 0.50 in the log-odds of graduating, compared to being in a STEM course (reference group);
+
+- having a mother with secondary education is associated with an increase of 0.96 in the log-odds of graduating compared to having a mother with no education (reference group);
+
+- having a mother with higher education is associated with an increase of 0.84 in the log-odds of graduating compared to having a mother with no education (reference group);
+
+- being male is associated with a decrease of 0.94 in the log-odds of graduating compared to being female (reference group);
+
+- being a scholarship holder is associated with a decrease of 2.18 in the log-odds of graduating compared to not being a scholarship holder;
+
+- each additional year of age at enrollment is associated with a decrease of 0.37 in the log-odds of graduating.
+
+
 ```{r, echo = F, message = F, results = 'hide', warning = F}
 
 # Predictions
@@ -654,16 +709,25 @@ pred_logit <- predict(fit_logit_3,
                       newdata = test, 
                       type = 'response')
 
-# We want also see if there are some interesting interations between variables
+```
+
+
+### Logistic Regression with interactions
+
+In logistic regression, interactions occur when the effect of one predictor variable on the outcome depends on the value of another independent variable. We will now try to build a logistic regression model with interactions to see if we can improve the model's performance using only significant variables find previously.
+
+```{r, echo = T, message = F, results = 'hide', warning = F}
 fit_int_1 <- update(fit_logit_3, 
                           .~.*.)
 summary(fit_int_1)
 fit_int_2 <- step(fit_int_1)
 ```
-Logistic Regression with interaction
-```{r, echo = F}
+```{r, echo = T}
 summary(fit_int_2)
+```
 
+
+```{r, echo = F}
 # Predictions
 pred_int <- predict(fit_int_2, 
                       newdata = test, 
@@ -671,9 +735,23 @@ pred_int <- predict(fit_int_2,
 
 ```
 
-In the Q-Q residuals plot, it is evident that the residuals are not normally distributed, suggesting that the variables included in the model are insufficient to explain the data variability. Additionally, the residuals vs leverage plot reveals the presence of points with very high leverage, indicating that there are still outliers in the dataset.
+
+We find that the single variables are like the simple model, but from the significant interactions we have that:
+
+- being male in a non-STEM course is associated with an increase of 0.63 in the log-odds of graduating;
+
+- having a scholarship and a mother with secondary or higher education is associated with an increase of, respectively, 1.36 and 1.67 in the log-odds of graduating;
+
+- being male with a scholarship decrease the log-odds of graduating by 0.86;
+
+- being a scholarship holder decreases log-odds of graduating by 0.12 for each year of age at enrollment time. Recalling that the coefficient for scholarship holder is 3.64 it means that if you enroll at 20 years old and you are a scholarship holder, so the log-odds of graduating are 3.64 - 0.12 * 20 = 1.24 compared to those who did not get the scholarship.
 
 
+We then plot residuals for both models in order to gain even more insights about the data we are working with: by looking Q-Q residuals plot, it is evident that the residuals are not normally distributed, suggesting that the variables included in the model are not sufficient to explain the data variability.
+
+Furthermore, the residuals vs leverage plot reveals the presence of points with very high leverage, indicating that there are still outliers in the dataset.
+
+The plots for the logistic regression with interactions are more similar to the ones of the logistic regression, suggesting that even if the variables are significant they do not particularly improve the model's performance. As we can see from the ANCOVA test, it is significant, but not improve particularly the residual deviance (from 2694 to 2670).
 
 
 ```{r, echo = F, out.width = '90%', out.height = '40%', fig.align = 'center'}
@@ -695,36 +773,92 @@ par(mfrow = c(1, 1))
 
 ```
 
-***Linear Discriminant Analysis (LDA)***
+```{r}
+anova(fit_logit_3, fit_int_2)
+```
+
+As we have assumed previously, from the two confusion matrices below (table 18 and table 19), we can see that there are no much difference between the two models, the only little difference is that the model with interactions predict just a little more zero's than the simple model.
+
+
+```{r, echo = F}
+# Confusion matrix
+
+cm_logit <- kable(table(test$is_Graduated, round(pred_logit)),
+              format = 'latex',
+              booktabs = T)
+
+cm_int <- kable(table(test$is_Graduated, round(pred_int)),
+                format = 'latex',
+                booktabs = T) 
+
+```
+
+
+
+
+```{r, echo = F, results = 'asis'}
+
+cat(c("\\begin{table}[!htb]
+    \\fontsize{9}{11}\\selectfont
+    \\begin{minipage}{.5\\linewidth}
+      \\caption{Test vs Logistic predictions}
+      \\centering",
+      cm_logit,
+      "\\end{minipage}%
+    \\begin{minipage}{.5\\linewidth}
+      \\centering
+        \\caption{Test vs Logistic with interactions predictions}", 
+      cm_int,
+      "\\end{minipage}
+\\end{table}"
+))
+
+```
+
+\newpage
+## Linear Discriminant Analysis (LDA)
 
 LDA is a classic statistical technique utilized in machine learning and pattern recognition for classification tasks. We employ it to identify which linear combination of features best separates multiple classes or categories in our dataset.
 
-At its core, LDA operates under the assumption that the data can be represented as multivariate Gaussian distributions and that the classes share the same covariance matrix. It seeks to find a projection of the data onto a lower-dimensional space while maximizing the separation between classes and minimizing the variance within each class.
+At its core, LDA operates under the assumption that the data can be represented as multivariate Gaussian distributions and that the classes share the same covariance matrix. It seeks to find a projection of the data onto a lower-dimensional space while maximizing the separation between classes and minimizing the variance within each class. 
+Even if the assumptions of LDA are not met, it is still possible to apply it when the variables are discrete. In such cases, LDA can still provide good separation between classes, especially if the differences between classes are sufficiently pronounced. Although the optimal performance of LDA is achieved when its assumptions are satisfied, it can still be a useful tool for exploring the data and gaining preliminary insights into the structure of the classes, even when the assumptions are violated.
 
-```{r, echo = F, message = F, out.height = '30%'}
-library(MASS)
+From now on we will use only confusion matrix on test set to evaluate the models, we will comparate all the models at the end.
 
+DA VEDERE SE CAMBIARE
+ADESSO CI CONCENTRIAMO SOLO SUI RISULTATI PIÙ IMPORTANTI, QUALI LE CONFUSION MATRIX E LE ALTRE COSE...
+I COEFFICIENTI DELLE VARIABILI VERRANNO CONFRONTATI ALLA FINE CON GLI ALTRI MODELLI
+```{r, echo = F}
 ######################################
 # Linear Discriminant Analysis (LDA)
 ######################################
+```
+
+```{r, echo = T, message = F}
+library(MASS)
 
 fit_lda <- lda(is_Graduated ~ ., 
                data = train)
+```
+
+We can observe the density of the LDA results respect to the "is_Graduated" variable on train set in the plot below. The coefficients represent the weights of each feature in the linear combination that best separates the classes, suggesting that the features included in the model are useful for predicting the outcome variable, although it is not linearly separable.
+
+```{r, echo = F, message = F, out.height = '30%', fig.align = 'center'}
 # Plot density of lda results with respect to the is_Graduated
 plot(fit_lda, 
      type = 'both',
      main = 'LDA') # col not working
 
 
-kable_styling(kable((round(t(fit_lda$scaling), 3)),
-      caption = 'LDA coefficients',
-      align = 'c',
-      format = 'latex',
-      booktabs = T),
-      latex_options = c("hold_position", "scale_down"),
-      full_width = F,
-      position = "center",
-      font_size = 9)
+# kable_styling(kable((round((fit_lda$scaling), 3)),
+#       caption = 'LDA coefficients',
+#       align = 'c',
+#       format = 'latex',
+#       booktabs = T),
+#       latex_options = c("hold_position", "scale_down"),
+#       full_width = F,
+#       position = "center",
+#       font_size = 9)
 
 # Predictions
 pred_lda <- predict(fit_lda, 
@@ -732,7 +866,7 @@ pred_lda <- predict(fit_lda,
 
 ```
 
-***Quadratic Discriminant Analysis (QDA)***
+## Quadratic Discriminant Analysis (QDA)
 
 QDA is an extension of Linear Discriminant Analysis (LDA) used for classification tasks. While LDA assumes that different classes share the same covariance matrix, QDA relaxes this assumption, allowing each class to have its own covariance matrix.
 
@@ -742,24 +876,91 @@ QDA is an extension of Linear Discriminant Analysis (LDA) used for classificatio
 # Quadratic Discriminant Analysis (QDA)
 ######################################
 
+```
+```{r, echo = T, message = F}
 fit_qda <- qda(is_Graduated ~ ., 
                data = train)
 
+```
+
+```{r, echo = F}
 # Plot density of qda coefficients with respect to the is_Graduated
 pred_qda <- predict(fit_qda, 
                     newdata = test)$posterior[, 2]
 detach('package:MASS')
 ```
 
-***Ridge Regression***
+Differently from LDA, QDA does not plot the density of the results, but we can still see the probability of the train set to be graduated on time in the tables below. We can see that QDA is really able to predict correctly who graduated on time, but it have not a good performance for predicting who did not graduate on time (89% vs 48%).
 
-Ridge regression is a regularization technique used in linear regression to mitigate the issues of multicollinearity and overfitting: it can be used to work with high dimensional data, which is why we find it valuable in our case
+```{r, echo = F}
+index_yes <- which(train$is_Graduated == 'Yes')
+pred_train <- predict(fit_qda)$posterior[, 2]
+kable_styling(kable(t(round(prop.table(table(round((1-pred_train[-index_yes]), 1))), 2)),
+      caption = 'Distribution of the results respect to NOT graduating on time in the train set',
+      align = 'c',
+      format = 'latex',
+      booktabs = T),
+      latex_options = c("hold_position", "scale_down"),
+      full_width = F,
+      position = "center",
+      font_size = 9)
+
+kable_styling(kable(t(round(prop.table(table(round((pred_train[index_yes]), 1))), 2)),
+      caption = 'Distribution of the results respect to graduating on time in the train set',
+      align = 'c',
+      format = 'latex',
+      booktabs = T),
+      latex_options = c("hold_position", "scale_down"),
+      full_width = F,
+      position = "center",
+      font_size = 9)
+```
+
+We see that the LDA model is more balanced in predicting who graduated on time and who did not, unlike the QDA model which is very prone to graduate on time (table 22 and table 23).
+
+
+```{r, echo = F}
+
+cm_lda <- kable(table(test$is_Graduated, round(pred_lda)),
+              format = 'latex',
+              booktabs = T)
+
+cm_qda <- kable(table(test$is_Graduated, round(pred_qda)),
+                format = 'latex',
+                booktabs = T) 
+
+```
+
+```{r, echo = F, results = 'asis'}
+
+cat(c("\\begin{table}[!htb]
+    \\fontsize{9}{11}\\selectfont
+    \\begin{minipage}{.5\\linewidth}
+      \\caption{Test vs LDA predictions}
+      \\centering",
+      cm_lda,
+      "\\end{minipage}%
+    \\begin{minipage}{.5\\linewidth}
+      \\centering
+        \\caption{Test vs QDA predictions}", 
+      cm_qda,
+      "\\end{minipage}
+\\end{table}"
+))
+
+```
+
+## Ridge Regression
+
+Ridge regression is a regularization technique used in linear regression to mitigate the issues of multicollinearity and overfitting: it can be used to work with high dimensional data, which is why we find it valuable in our case.
+
 ```{r, echo = F, message = F}
 
 ###########################
 # Ridge Regression
 ###########################
-
+```
+```{r, echo = T, message = F}
 library(glmnet)
 
 design_matrix_train <- model.matrix(is_Graduated ~ .,
@@ -802,17 +1003,32 @@ colnames(pred_ridge) <- 'pred_ridge'
 
 ```
 
-***Lasso Regression***
+In the figures below we can see the evolution of the coefficients of the ridge model with respect to the lambda value, left figure. We can see that the coefficients are shrinking to zero as the lambda value increases, this is a clear sign that the model is working correctly and that the regularization is working as expected. The right figure show the evolution of the deviance of the model with respect to coefficients value. We can also see that with the ridge model the coefficients can be change direction over the lambda value.
+
+```{r, echo = F, fig.align = 'center', warning = F}
+
+par(mfrow = c(1, 2))
+# Some fancy graphs about ridge model
+plot(ridge_model, xvar = 'lambda', label = T)
+plot(ridge_model, xvar = 'dev', label = T)
+title('Ridge model', outer = T, cex = 1.5, line = -2)
+par(mfrow = c(1, 1))
+
+```
+
+## Lasso Regression
 
 This regression techniques takes a slightly different approach by adding a penalty term that penalizes the absolute values of the regression coefficients, instead of their squares (which is what Rigde regression does).
 
 This penalty term encourages sparsity in the coefficient vector, effectively driving some coefficients to exactly zero. As a result, Lasso regression not only helps in shrinking coefficient values but also performs variable selection by automatically excluding irrelevant features from the model.
+
 ```{r, echo = F}
 
 ###########################
 # Lasso Regression
 ###########################
-
+```
+```{r, echo = T, message = F}
 # Lasso Regression with Binomial distribution
 lasso_model <- glmnet(x = design_matrix_train, 
                       y = train$is_Graduated,
@@ -844,14 +1060,11 @@ colnames(pred_lasso) <- 'pred_lasso'
 
 ```
 
+Like previously, we can see the evolution of the coefficients of the lasso model with respect to the lambda value, left figure. We can see that the coefficients are shrinking to zero as the lambda value increases, this is a clear sign that the model is working correctly and that the regularization is working as expected. The right figure shows the deviance of the model with respect to the lambda value, we can see that the deviance is decreasing as the lambda value increases, this is a clear sign that the model is working correctly and that the regularization is working as expected. However, unlike the ridge model, the coefficients hardly change direction over the lambda value and converge to 0 faster than the ridge model.
+
 ```{r, echo = F, fig.align = 'center', warning = F}
 
-# Some fancy graphs about ridge model
 par(mfrow = c(1, 2))
-plot(ridge_model, xvar = 'lambda', label = T)
-plot(ridge_model, xvar = 'dev', label = T)
-title('Ridge model', outer = T, cex = 1.5, line = -2)
-
 # Some fancy graphs about lasso model
 plot(lasso_model, xvar = 'lambda', label = T)
 plot(lasso_model, xvar = 'dev', label = T)
@@ -860,9 +1073,45 @@ par(mfrow = c(1, 1))
 
 ```
 
+From the confusion matrices below (table 24 and table 25), we can see that the ridge model predictions are more similar to the lasso model predictions, likely logistic models.
 
-### 5. Model Evaluation
-we are going to evaluate a our models by plotting ROC curve and by computing some standard evaluation metrics: TALK ABOUT ROC ECC ECC HERE 
+```{r, echo = F}
+
+cm_ridge <- kable(table(test$is_Graduated, round(pred_ridge)),
+              format = 'latex',
+              booktabs = T)
+
+cm_lasso <- kable(table(test$is_Graduated, round(pred_lasso)),
+                format = 'latex',
+                booktabs = T) 
+
+```
+
+```{r, echo = F, results = 'asis'}
+
+cat(c("\\begin{table}[!htb]
+    \\fontsize{9}{11}\\selectfont
+    \\begin{minipage}{.5\\linewidth}
+      \\caption{Test vs LDA predictions}
+      \\centering",
+      cm_ridge,
+      "\\end{minipage}%
+    \\begin{minipage}{.5\\linewidth}
+      \\centering
+        \\caption{Test vs QDA predictions}", 
+      cm_lasso,
+      "\\end{minipage}
+\\end{table}"
+))
+
+```
+
+# Model Evaluation
+
+We intend to evaluate our models by plotting their respective ROC curves and computing some standard evaluation metrics, such as precision, accuracy, recall and f1 score. Furthermore, we will compare the coefficients of all models keeping out the QDA model, which has no coefficients comparable, and the Logistic with interactions model due to the fact it has more variables than the other models.
+
+
+ROC (Receiver Operating Characteristic) curves are graphical representations used to evaluate the performance of binary classification models. The ROC curve plots the True Positive Rate (TPR) against the False Positive Rate (FPR) at various threshold settings.
 
 
 ```{r, echo = F, message = F, warning = F}
@@ -899,7 +1148,7 @@ plot(roc_out_logit,
      col = 'red', 
      lwd = 2, 
      main = 'ROC curves', 
-     xlab = 'F Positive Rate', 
+     xlab = '1 - F Positive Rate', 
      ylab = 'T Positive Rate')
 lines(roc_out_int, 
       col = 'black', 
@@ -917,14 +1166,12 @@ lines(roc_out_lasso,
       col = 'orange', 
       lwd = 2)
 legend('bottomright', 
-       legend = c('Logit', 'Interaztion', 'LDA', 'QDA', 'Ridge', 'Lasso'), 
+       legend = c('Logit', 'Interaction', 'LDA', 'QDA', 'Ridge', 'Lasso'), 
        col = c('red', 'black', 'blue', 'green', 'purple', 'orange'), 
        lty = 1)
 
 
 ```
-
-
 
 ```{r, echo = F}
 
@@ -1001,10 +1248,24 @@ kable_styling(kable(results,
 
 ```
 
+As we can see from the figure above and from table 26, all the models have a very similar performance, the only model that stands out is the QDA model, which has the best recall, but the worst precision since it predicts 'graduated on time' more often than other models. The other models have a very similar performance in terms of AUC, accuracy, precision, recall and F1 score. This tells us that there are no particular differences between the models we used and we have covered all the possible explanation from data.
+This result suggests that there are no significant differences between the models used.
+Given these reasons, it was decided to use the simple logistic model to explain the phenomenon for simplicity.
+Due to the structure of the model, we cannot assess the percentage increase of each individual variable, but we can observe the ratio between the variables. We can only evaluate the odds ratios.
+To evaluate the influence of gender, we need to take the exp of the coefficient related to gender.
+(exp(sex_Male) = 0.382, so if the gender is male, the probability of graduating is 0.382 times that of a female, which is (100 - 38.2)% less than that of a female).
+While the ratio between Married and Single is 1.06, the ratio between Other and Single is 0.07, which indicates that those in the Other category have a significant difference in marrying on time. Those who choose non-STEM subjects have a 58.9% lower relative probability compared to those who choose STEM subjects.
+It can be noted that those with an educated mother have more than twice the probability of graduating on time compared to those whose mother did not complete high school; apparently, knowing the mother's education level makes knowing the father's education level irrelevant.
+Notably, those who decide to follow a scholarship have 2.24 times the probability of graduating on time compared to those who do not follow one.
+As expected, as age increases, the probability of graduating on time decreases; in fact, for each additional year of age, the probability of graduating on time decreases exponentially by 70%, although this is only an approximation of the model.
+
+
+
+
 ```{r, echo = F}
 coef_matrix <- matrix(0,
                       ncol = 5,
-                      nrow = 19)
+                      nrow = length(coef(fit_logit_1)))
 coef_names <- names(coef(fit_logit_1))
 coef1 <- coef(fit_logit_1)
 coef2 <- coef(fit_logit_3)
@@ -1028,9 +1289,96 @@ coef_df <- data.frame(Logit_full = coef_matrix[, 1],
                       Lasso = coef_matrix[, 4],
                       LDA = coef_matrix[, 5], 
                       row.names = coef_names)
+
+kable_styling(kable(round(coef_df, 2), 
+      caption = 'Coefficients comparison',
+      align = 'c',
+      format = 'latex',
+      booktabs = T), 
+              latex_options = "hold_position", 
+              full_width = F,
+              # position = "center", 
+              font_size = 9)
+
+
+plot(coef_df$Logit_full, 
+     type = 'l', 
+     lwd = 2, 
+     ylim = c(min(coef_df), max(coef_df)), 
+     main = 'Coefficients comparison', 
+     xlab = 'Coefficients', 
+     ylab = 'Variables')
+lines(coef_df$Logit_final, 
+      lwd = 2, 
+      col = 'red')
+lines(coef_df$LDA, 
+      lwd = 2, 
+      col = 'blue')
+lines(coef_df$Ridge,
+      lwd = 2, 
+      col = 'purple')
+lines(coef_df$Lasso, 
+      lwd = 2, 
+      col = 'orange')
+legend('topright', 
+       legend = c('Logit full', 'Logit final', 'LDA', 'Ridge', 'Lasso'), 
+       col = c('black', 'red', 'blue', 'purple', 'orange'), 
+       lty = 1)
+
 ```
 
-APPENDIX A
+As previously assumed, from the graph we can see that the coefficients of the various models are very similar to each other. All models give a considerable importance to the intercept, i.e. the reference group, except for the LDA model which does not have a direct intercept in the Rstudio output. All models agree on assigning a negative weight to Male sex, a positive weight to Scholarship holder, which is consistent with the previous analysis and a negative weight for the age. Except for the Lasso model, they all agree with the positive importance of the mother's level of education, however Father's qualification is not significant since is high correlated with it. Finally, it can noted that only the Ridge model gives importance to the student's level of education, in contrast to what was assumed in the EDA (table 7).
+
+
+## Explaining the model
+
+As we said before, the logistic model is the best model to explain the phenomenon, so we will use it to explain the results.
+
+Contrary to what we assumed in the EDA, being married or not having a higher education degree do not seem to be influential variables in determining whether a student will graduate on time. The only relevant family variable is the mother's education level, which has a positive effect on the probability of graduating on time by at least 2.3 times compared to those whose mothers did not finish high school.
+
+There is no significant difference between those who live away from home and those who do not, nor between those who need special assistance and those who do not.
+
+Those who choose a STEM course have 1.64 times the probability of graduating on time compared to those who choose a non-STEM course.
+
+Being male also negatively impacts the probability of graduating on time, with about a 38% decrease compared to the probability for females.
+
+The financial aid from a scholarship has a significantly positive impact on the probability of graduating on time, with an increase of 7.86 times compared to those who do not have a scholarship. This indicates that not having to worry about paying for education and being able to afford not working during the study period has a significantly positive impact.
+
+Finally, age has a negative effect on the probability of graduating on time, with a 70% decrease for each additional year of age. This indicates that the later one starts university, the higher the chances of falling behind or dropping out.
+
+
+
+# Conclusions
+
+We built several models capable of moderately predicting whether a student will graduate based on enrollment data. Such a tool could be valuable for various real-world applications. For example, universities could use it to identify students who are struggling to graduate on time and implement policies to address these issues.
+
+We also investigated whether the University of Portalegre awarded scholarships based on merit or need (i.e., coming from a low-income family). If scholarships were awarded based on merit, it would likely indicate that recipients graduate sooner simply because they are better students. However, we found that scholarships are awarded based on need. This suggests that the program effectively supports students during their academic journey, and increasing funding for it would be beneficial.
+
+Our analysis also revealed that non-STEM students take longer to graduate. This finding warrants further investigation to determine if there are issues with the course structure or other contributing factors.
+
+
+## Limitations and Future Work: 
+Our models are based on enrollment data and do not account for other factors that may influence student success, such as personal circumstances, academic performance, or external factors. Additionally, our models only predict whether a student will graduate on time, which may not be the best metric to evaluate overall academic success.
+
+Future work could involve incorporating additional data sources to improve the accuracy of the models and provide a more comprehensive understanding of student success. Further research could also explore the impact of different interventions on student outcomes and identify the most effective strategies for supporting at-risk students.
+
+
+
+
+
+
+# References
+
+Realinho, V.; Machado, J.;Baptista, L.; Martins, M.V. Predicting
+Student Dropout and Academic Success. Data 2022, 7, 146.
+https://doi.org/10.3390/data7110146
+
+
+Valentim Realinho, Jorge Machado, Luís Baptista, & Mónica V. Martins. (2021). Predict students' dropout and academic success (1.0) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.5777340
+
+
+
+## Appendix A
 
 ```{r echo = F, message = F}
 
@@ -1040,7 +1388,7 @@ library(knitr)
 # Create a data frame that represents your dataset
 original_data <- data.frame(
   Variable = c("Married", "Application mode", "Application order", "Course", 
-               "evening attendance", "Displaced", "Educational special needs", 
+               "Evening attendance", "Displaced", "Educational special needs", 
                "Tuition fees up to date", "Gender", "Scholarship holder", 
                "Age at enrollment", "International", "Curricular units 1st sem (credited)", 
                "Curricular units 1st sem (enrolled)", "Curricular units 1st sem (evaluations)", 
@@ -1091,6 +1439,3 @@ original_data <- data.frame(
 # Create the table using kable
 kable(original_data, col.names = c("Variable", "Description"), align = c('l', 'l'), caption = "Dataset Description")
 ```
-
-```
-
