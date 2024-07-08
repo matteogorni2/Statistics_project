@@ -66,7 +66,7 @@ data$is_Graduated[which(data$is_Graduated == 'Graduate')] <- 'Yes'
 
 ```
 
-***Missing values and data balence check:***
+***Missing values and data balance check:***
 
 There were no missing values and the dataset is balanced.
 
@@ -370,7 +370,7 @@ kable_styling(kable(table(data$Course),
 
 ***Nationality:***
 
-Categorical variable representing a students nationality: looking at the data we saw that while we had a lot of labels (one for each nationality), the vast majority of people were Portuguese, therefore we labeled data in the following way
+Categorical variable representing a students nationality: looking at the data we saw that while we had a lot of labels (one for each nationality), the vast majority of people were Portuguese, therefore we labeled data in the following way.
 
 ```{r, echo = F}
 
@@ -398,6 +398,7 @@ Given that to build our model we are going to use only information that was pres
 
 - Tuition fees up do date.
 
+- We also removed the 'International' variable since it was rendundant.
 ```{r, echo = F, message = F}
 
 # Remove useless columns
@@ -412,7 +413,7 @@ data <- data[, -which(grepl('Application', colnames(data)) |
 
 ```
 
-We also removed the 'International' variable since it was rendundant.
+
 ```{r}
 table(data$Nationality, data$International)
 data <- data[, -which(colnames(data) == 'International')]
@@ -469,9 +470,9 @@ Most of our dataset's features are categorical, therefore we will plot the data 
 
 - Students who receive a scholarship have a higher graduation rate than those who do not (76.0% vs 41.3%); (table 16)
 
-- Women seem graduate on time much more than men do (57.9% vs 35.2%). (table 17)
+- Women seem to graduate on time much more than men do (57.9% vs 35.2%). (table 17)
 
-- From the figures below we can see that 'Age at enrollment' have not a normal distribution, we can see that the distribution of the age at enrollment is different for students who graduate and those who do not. Both have an high right tail with more outliers, but the distribution of graduate on time is more concentrated around the mean value (20 years). 
+- From the figures below we can see that the distribution of 'Age at enrollment' does not showcase a normal behaviour and it's different between students who graduate and those who do not: both of them have a high right tail with more outliers, but the distribution of graduate on time is more concentrated around the mean value (20 years). 
 
 
 ```{r sample, echo = F, results = 'asis'}
@@ -645,7 +646,17 @@ par(mfrow = c(1, 1))
 
 # Model building
 
-We will now try to build different models using the training set, the models we will use include logistic regression, linear discriminant analysis (LDA), quadratic discriminant analysis (QDA), ridge regression and lasso regression. We will then evaluate the performance of these models using the test set working with the confusion matrix and the ROC curve and finally we compare the relative coefficients.
+We will now try to build different models using the training set, the models we will use include logistic regression, linear discriminant analysis (LDA), quadratic discriminant analysis (QDA), ridge regression and lasso regression. We will then evaluate the performance of these models using the test set by plotting the confusion matrix and the ROC curve. Finally, we'll compare the relative coefficients.
+
+Before proceeding, we will translate the 'Age at enrollment' variable to avoid a high intercept value.
+
+```{r}
+train$Age.at.enrollment <- train$Age.at.enrollment - 17
+test$Age.at.enrollment <- test$Age.at.enrollment - 17
+```
+
+
+
 
 ## Logistic Regression
 
@@ -669,7 +680,7 @@ fit_logit_1 <- glm(is_Graduated ~ .,
             data = train)
 summary(fit_logit_1)
 
-# Keep only significant variables
+# Stepwise selection
 fit_logit_2 <- step(fit_logit_1)
 summary(fit_logit_2)
 
@@ -699,7 +710,7 @@ One very important feature of logistic regression is that it is possible to look
 
 - being a scholarship holder is associated with a decrease of 2.18 in the log-odds of graduating compared to not being a scholarship holder;
 
-- each additional year of age at enrollment is associated with a decrease of 0.37 in the log-odds of graduating.
+- each additional year of age at enrollment is associated with a decrease of 0.366 in the log-odds of graduating. 
 
 
 ```{r, echo = F, message = F, results = 'hide', warning = F}
@@ -720,6 +731,8 @@ In logistic regression, interactions occur when the effect of one predictor vari
 fit_int_1 <- update(fit_logit_3, 
                           .~.*.)
 summary(fit_int_1)
+
+# Stepwise selection
 fit_int_2 <- step(fit_int_1)
 ```
 ```{r, echo = T}
@@ -735,7 +748,7 @@ pred_int <- predict(fit_int_2,
 
 ```
 
-
+\newpage
 We find that the single variables are like the simple model, but from the significant interactions we have that:
 
 - being male in a non-STEM course is associated with an increase of 0.63 in the log-odds of graduating;
@@ -744,7 +757,7 @@ We find that the single variables are like the simple model, but from the signif
 
 - being male with a scholarship decrease the log-odds of graduating by 0.86;
 
-- being a scholarship holder decreases log-odds of graduating by 0.12 for each year of age at enrollment time. Recalling that the coefficient for scholarship holder is 3.64 it means that if you enroll at 20 years old and you are a scholarship holder, so the log-odds of graduating are 3.64 - 0.12 * 20 = 1.24 compared to those who did not get the scholarship.
+- being a scholarship holder decreases log-odds of graduating by 0.12 for each year of age at enrollment time. Recalling that in this case the coefficient for scholarship holder is 1.60, it means that if you enroll at 20 years old and you have a scholarship, the log-odds of graduating are 1.60 - 0.12 * 20 = -0.80 compared to those who did not get the scholarship.
 
 
 We then plot residuals for both models in order to gain even more insights about the data we are working with: by looking Q-Q residuals plot, it is evident that the residuals are not normally distributed, suggesting that the variables included in the model are not sufficient to explain the data variability.
@@ -816,18 +829,16 @@ cat(c("\\begin{table}[!htb]
 ```
 
 \newpage
+For the upcoming models we decided to use confusion matrices as the main metric to evaluate our models' performance, We choose to do this by applying Occam's razor principle and choose to extract only information that are relevant to our research question, and finally we compare all the models using classification evaluation metrics. 
+
 ## Linear Discriminant Analysis (LDA)
 
 LDA is a classic statistical technique utilized in machine learning and pattern recognition for classification tasks. We employ it to identify which linear combination of features best separates multiple classes or categories in our dataset.
 
 At its core, LDA operates under the assumption that the data can be represented as multivariate Gaussian distributions and that the classes share the same covariance matrix. It seeks to find a projection of the data onto a lower-dimensional space while maximizing the separation between classes and minimizing the variance within each class. 
-Even if the assumptions of LDA are not met, it is still possible to apply it when the variables are discrete. In such cases, LDA can still provide good separation between classes, especially if the differences between classes are sufficiently pronounced. Although the optimal performance of LDA is achieved when its assumptions are satisfied, it can still be a useful tool for exploring the data and gaining preliminary insights into the structure of the classes, even when the assumptions are violated.
+Even if the assumptions of LDA are not met, it is still possible to apply it when the variables are discrete. In such cases, LDA can still provide good separation between classes, especially if the differences between classes are sufficiently pronounced. 
 
-From now on we will use only confusion matrix on test set to evaluate the models, we will comparate all the models at the end.
 
-DA VEDERE SE CAMBIARE
-ADESSO CI CONCENTRIAMO SOLO SUI RISULTATI PIÙ IMPORTANTI, QUALI LE CONFUSION MATRIX E LE ALTRE COSE...
-I COEFFICIENTI DELLE VARIABILI VERRANNO CONFRONTATI ALLA FINE CON GLI ALTRI MODELLI
 ```{r, echo = F}
 ######################################
 # Linear Discriminant Analysis (LDA)
@@ -1092,13 +1103,13 @@ cm_lasso <- kable(table(test$is_Graduated, round(pred_lasso)),
 cat(c("\\begin{table}[!htb]
     \\fontsize{9}{11}\\selectfont
     \\begin{minipage}{.5\\linewidth}
-      \\caption{Test vs LDA predictions}
+      \\caption{Test vs Ridge predictions}
       \\centering",
       cm_ridge,
       "\\end{minipage}%
     \\begin{minipage}{.5\\linewidth}
       \\centering
-        \\caption{Test vs QDA predictions}", 
+        \\caption{Test vs Lasso predictions}", 
       cm_lasso,
       "\\end{minipage}
 \\end{table}"
@@ -1247,28 +1258,27 @@ kable_styling(kable(results,
 
 ```
 
-As we can see from the figure above and from table 26, all the models have a very similar performance, the only model that stands out is the QDA model, which has the best recall, but the worst precision since it predict more 'graduated on time' than other models. The other models have a very similar performance in terms of AUC, accuracy, precision, recall and F1 score. This tells us that there are no particular differences between the models we used and we have covered all the possible explanation from data.
+As we can see from the figure above and from table 26, all the models have a very similar performance, the only model that stands out is the QDA model, which has the best recall, but the worst precision since it predicts 'graduated on time' more often than other models. The other models have a very similar performance in terms of AUC, accuracy, precision, recall and F1 score. This tells us that there are no particular differences between the models we used and we have covered all the possible explanation from data.
+This result suggests that there are no significant differences between the models used.
 
-To explore this topic further we can comparate the coefficients of all models keeping out the QDA model, which has no coefficients comparable, and the Logistic with interactions model due to the fact it has more variables than the other models.
-
-
-
+To explore this topic further we comparate the coefficients of all models keeping out the QDA model, which has no coefficients comparable, and the Logistic with interactions model due to the fact it has more variables than the other models.
 
 
 
 
 
 
-Come possiamo vedere dalla tabella precedente, a parte per la QDA i modelli risultano molto simili tra le metriche utilizzate, in compenso la QDA ha ottenuto la migliore Recall. 
-Questo risultato porta a pensare che non ci siano particolari differenze tra i modelli usati.
-Date queste motivazioni, per semplicità di spiegazione si è deciso di usare il modello logistico semplice per spiegare il fenomeno.
-Per come è strutturato il modello non si può valutare l'incremento percentuale di ogni singola variabile, ma si può osservare di quanto è il rapporto tra le variabili. Possiamo solo valurare solo gli odds ratio. 
-Cioè per valurare quanto influenzi il sesso basta fare l'exp del coefficiente relativo al sesso.
-(exp(sex_Male) = 0.382, quindi se il sesso è maschile, la probabilità di laurearsi è 0.382 volte quella di una femmina, cioè il (100 - 38.2)% in meno rispetto ad una femmina).
-Mentre il rapporto tra Sposato e Single è di 1.06 quello tra Altro e Single è di 0.07, il che stà ad indicare che chi rientra nella categoria Altro ha una notevole differenza nello sposarsi in tempo. Chi sceglie materie non stem ha il 58.9% di probabilità relativa in meno rispetto a stem.
-Si può notare che ha una madre istruita ha più del doppio di probabilitò di laurearsi in tempo rispetto a chi ha una madre che non ha terminato le superiori, a quanto pare conoscendo il titolo di studio della madre non è influente sapere anche quello del padre.
-Ottimo chi decide di seguire una Scholarship, ha il 2.24 volte di probabilità di laurearsi in tempo rispetto a chi non la segue.
-Come ci si poteva aspettare, andando avanti con l'età la probabilità di laurearsi in tempo diminuisce, infatti per ogni anno in più di età la probabilità di laurearsi in tempo diminuisce decresce a livello esponenziale del 70% per ogni anno in più, ovviamente è solo un'approssimazione del modello
+
+Given these reasons, it was decided to use the simple logistic model to explain the phenomenon for simplicity.
+Due to the structure of the model, we cannot assess the percentage increase of each individual variable, but we can observe the ratio between the variables. We can only evaluate the odds ratios.
+To evaluate the influence of gender, we need to take the exp of the coefficient related to gender.
+(exp(sex_Male) = 0.382, so if the gender is male, the probability of graduating is 0.382 times that of a female, which is (100 - 38.2)% less than that of a female).
+While the ratio between Married and Single is 1.06, the ratio between Other and Single is 0.07, which indicates that those in the Other category have a significant difference in marrying on time. Those who choose non-STEM subjects have a 58.9% lower relative probability compared to those who choose STEM subjects.
+It can be noted that those with an educated mother have more than twice the probability of graduating on time compared to those whose mother did not complete high school; apparently, knowing the mother's education level makes knowing the father's education level irrelevant.
+Notably, those who decide to follow a scholarship have 2.24 times the probability of graduating on time compared to those who do not follow one.
+As expected, as age increases, the probability of graduating on time decreases; in fact, for each additional year of age, the probability of graduating on time decreases exponentially by 70%, although this is only an approximation of the model.
+
+
 
 
 ```{r, echo = F}
@@ -1329,71 +1339,48 @@ lines(coef_df$Ridge,
 lines(coef_df$Lasso, 
       lwd = 2, 
       col = 'orange')
-legend('topright', 
+legend('topleft', 
        legend = c('Logit full', 'Logit final', 'LDA', 'Ridge', 'Lasso'), 
        col = c('black', 'red', 'blue', 'purple', 'orange'), 
        lty = 1)
 
 ```
 
-As previously assumed, from the graph we can see that the coefficients of the various models are very similar to each other. All models give a considerable importance to the intercept, i.e. the reference group, except for the LDA model which does not have a direct intercept in the Rstudio output. All models agree on assigning a negative weight to Male sex, a positive weight to Scholarship holder, which is consistent with the previous analysis and a negative weight for the age. Except for the Lasso model, they all agree with the positive importance of the mother's level of education, however Father's qualification is not significant since is high correlated with it. Finally, it can noted that only the Ridge model gives importance to the student's level of education, in contrast to what was assumed in the EDA (table 7).
+As previously assumed, from the graph we can see that the coefficients of the various models are very similar to each other. All models give some importance to the intercept, i.e. the reference group, except for the LDA model which does not have a direct intercept in the Rstudio output. All models agree on assigning a negative weight to Male sex and for Age and a positive weight to Scholarship holder, which is consistent with the previous analysis. Except for the Lasso model, they all agree with the positive importance of the mother's level of education, however Father's qualification is not significant since is high correlated with it. Finally, it can noted that only the Ridge model gives importance to the student's level of education, in contrast to what was assumed in the EDA (table 7).
 
 
 ## Explaining the model
 
-As we can see previously, the logistic model is the best model to explain the phenomenon, so we will use it to explain the results.
+As we said before, since all models are similar, the logistic model is the best model to explain the phenomenon, so we will use it to explain the results:
 
-Diversamente da quanto abbiamo assunto nell'EDA, essere sposati o non avere un titolo di studio superiore sembrano non essere le variabili influenti nel determinare se uno studente si laureerà in tempo o meno. L'unica variabile familiare che risulta rilevante è il titolo di studio della madre, che ha un effetto positivo sulla probabilità di laurearsi in tempo di almeno 2.3 volte rispetto a chi non ha una madre che non ha terminato le superiori.
+- Contrary to what we assumed in the EDA, being married or not having a higher education degree do not seem to be influential variables in determining whether a student will graduate on time. The only relevant family variable is the mother's education level, which has a positive effect on the probability of graduating on time by at least 2.3 times compared to those whose mothers did not finish high school.
 
-Non c'è una differenza significativa tra i fuori sede e non e neanche tra chi ha bisogno di aiuti speciali.
+- There is no significant difference between those who live away from home and those who do not, nor between those who need special assistance and those who do not.
 
-Chi scegli un corso stem ha 1.64 volte di probabilità in più di laurearsi in tempo rispetto a chi sceglie un corso non stem.
+- Those who choose a STEM course have 1.64 times the probability of graduating on time compared to those who choose a non-STEM course.
 
-Anche essere maschi impatta negativamente sulla probabilità di laurearsi in tempo, con un decremento di circa il 38% rispetto alla probabilità che hanno le femmine.
+- Being male also negatively impacts the probability of graduating on time, with about a 38% decrease compared to the probability for females.
 
-Mentre l'aiuto economico della borsa di studio ha un impatto notevolemente positivo sulla probabilità di laurearsi in tempo, con un incremento di 7.86 volte rispetto a chi non ha una borsa di studio, andando ad indicare che non dover pensare a come pagarsi gli studi e potersi permettere di non lavorare durante il periodo di studio ha un impatto notevolmente positivo.
+- The financial aid from a scholarship has a significantly positive impact on the probability of graduating on time, with an increase of 7.86 times compared to those who do not have a scholarship. This indicates that not having to worry about paying for education and being able to afford not working during the study period has a significantly positive impact.
 
-Infine, l'età ha un effetto negativo sulla probabilità di laurearsi in tempo, con un decremento del 70% per ogni anno in più di età, andando ad indicare che più tardi s'inizia a fare l'università maggiori sono le probabilità probabilità di diventare fuoricorso o abbandonare gli studi.
+- Finally, age has a negative effect on the probability of graduating on time, with a 70% decrease for each additional year of age. This indicates that the later one starts university, the higher the chances of falling behind or dropping out.
 
-
-
-**Data Characteristics**
-
-*Feature Quality*: The predictors appear to have a similar level of influence on the response variable (is_Graduated). This suggests that no single model is able to extract substantially more information from the predictors than the others.
-
-*Signal-to-Noise Ratio*: The comparable performance across models indicates a balanced signal-to-noise ratio in the data. If the data were very noisy or the predictors weak, greater variability in model performance would be expected.
-
-*Multicollinearity*: The predictors might be collinear, meaning they contain overlapping information. This can cause different models to perform similarly because they are capturing the same patterns in the data.
-
-**Model Complexity**:
-
-simpler models (e.g., Logistic Regression) and more complex models (e.g., QDA) perform similarly, suggesting that increasing model complexity does not lead to significant improvements. This implies that the underlying relationships in the data are relatively straightforward and do not require complex modeling to capture.
-
-**Data Linearity**:
-
-the similar performance of linear models (Logit, LDA) and non-linear models (QDA) suggests that the relationships between predictors and the response variable may be approximately linear. Non-linear models do not have a significant advantage, indicating no strong non-linear patterns in the data that are not being captured by the linear models.
-
-**Predictive Power**:
-
-The results suggest that the predictors sare a limited predicting power, indicating that there are be other unobserved factors influencing whether a student graduates on time or not,this is consistent with our project framework. 
 
 # Conclusions
 
-We were able to build several models that are able with a moderate degree of certantly whether a student will graduate or not just by looking at enrollment data.
-A tool like this could be useful in several real world applications, universities could use these to better understand who is struggling to graduate in time and implement policy changes to address eventual issues 
+We built several models capable of moderately predicting whether a student will graduate based on enrollment data. Such a tool could be valuable for various real-world applications. For example, universities could use it to identify students who are struggling to graduate on time and implement policies to address these issues.
 
-DA RIVEDERE
+We also investigated whether the University of Portalegre awarded scholarships based on merit or need (i.e., coming from a low-income family). If scholarships were awarded based on merit, it would likely indicate that recipients graduate sooner simply because they are better students. However, we found that scholarships are awarded based on need. This suggests that the program effectively supports students during their academic journey, and increasing funding for it would be beneficial.
 
-In conclusion, we have built several models that are able to predict with a moderate degree of certainty whether a student will graduate on time or not just by looking at enrollment data and if they are scholarship holder. These models can be useful in several real-world applications, such as helping universities identify students who are at risk of dropping out and implementing interventions to support them. By understanding the factors that influence student success, universities can take proactive measures to improve graduation rates and student outcomes. The models we have developed provide a valuable tool for universities to identify at-risk students and provide them with the support they need to succeed.
-
-- SPIEGARE IL FATTO CHE PARTE DEL SUCCESSO NON È DOVUTO ALLE VARIABILI CONSIDERATE, MA A VARIABILI NON OSSERVATE. SI POTREBBE CONSIDERARE COME VARIABILE IL VOTO DI USCITA DALLE SUPERIORI.
-- RISPIEGARE IN BREVE QUALI SONO LE VARIABILI CHE INFLUENZANO DI PIÙ IL RISULTATO
-- RICORDARSI CHE IL MODELLO NON SPIEGA SE LO STUDENTE SI LAUREA O MENO, MA SE LO FA IN TEMPO
-- SPIEGARE CHE IL MODELLO NON È PERFETTO, MA È UN BUON INIZIO PER CAPIRE QUALI SONO LE VARIABILI CHE INFLUENZANO DI PIÙ IL RISULTATO
+Our analysis also revealed that non-STEM students take longer to graduate. This finding warrants further investigation to determine if there are issues with the course structure or other contributing factors.
 
 
 ## Limitations and Future Work: 
-Our models are based on enrollment data and do not take into account other factors that may influence student success, such as personal circumstances, academic performance, or external factors. Future work could include incorporating additional data sources to improve the accuracy of the models and provide a more comprehensive understanding of student success. Additionally, further research could explore the impact of different interventions on student outcomes and identify the most effective strategies for supporting at-risk students.
+Our models are based on enrollment data and do not account for other factors that may influence student success, such as personal circumstances, academic performance, or external factors. Additionally, our models only predict whether a student will graduate on time, which may not be the best metric to evaluate overall academic success.
+
+Future work could involve incorporating additional data sources to improve the accuracy of the models and provide a more comprehensive understanding of student success. Further research could also explore the impact of different interventions on student outcomes and identify the most effective strategies for supporting at-risk students.
+
+
 
 
 
