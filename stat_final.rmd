@@ -28,7 +28,7 @@ header-includes:
 \newpage
 # Introduction
 
-The data was originally collected by the Polytechnic Institute of Portalegre in Portugal to build machine learning models that predict a student’s outcome based on various socioeconomic factors and academic performance. This was done to develop an analytics tool for the tutoring program to direct their efforts more effectively.
+The data was originally collected by the Polytechnic Institute of Portalegre in Portugal to build machine learning models that predict a student’s outcome based on various socioeconomic factors and academic performance [1]. This was done to develop an analytics tool for the tutoring program to direct their efforts more effectively.[2]
 
 The dataset was created from several disjoint databases and includes students enrolled in different undergraduate degrees, such as agronomy, design, education, nursing, journalism, management, social service, and technologies, it consists of 4424 records with 35 features.
 
@@ -1269,9 +1269,10 @@ To explore this topic further we comparate the coefficients of all models keepin
 
 
 
-Given these reasons, it was decided to use the simple logistic model to explain the phenomenon for simplicity.
-Due to the structure of the model, we cannot assess the percentage increase of each individual variable, but we can observe the ratio between the variables. We can only evaluate the odds ratios.
-To evaluate the influence of gender, we need to take the exp of the coefficient related to gender.
+We decided to use the simple logistic model to explain the phenomenon since it performs well and is an explainable model.
+Due to the structure of the model, we cannot assess the percentage increase of each individual variable, but we can look at different odds ratios.
+
+To evaluate the influence of gender,for example, we need to take the exp of the coefficient related to gender.
 (exp(sex_Male) = 0.382, so if the gender is male, the probability of graduating is 0.382 times that of a female, which is (100 - 38.2)% less than that of a female).
 While the ratio between Married and Single is 1.06, the ratio between Other and Single is 0.07, which indicates that those in the Other category have a significant difference in marrying on time. Those who choose non-STEM subjects have a 58.9% lower relative probability compared to those who choose STEM subjects.
 It can be noted that those with an educated mother have more than twice the probability of graduating on time compared to those whose mother did not complete high school; apparently, knowing the mother's education level makes knowing the father's education level irrelevant.
@@ -1368,9 +1369,9 @@ As we said before, since all models are similar, the logistic model is the best 
 
 # Conclusions
 
-We built several models capable of moderately predicting whether a student will graduate based on enrollment data. Such a tool could be valuable for various real-world applications. For example, universities could use it to identify students who are struggling to graduate on time and implement policies to address these issues.
+We built several models capable of predicting moderately well whether a student will graduate based on enrollment data. Such a tool could be used in various real-world applications. For example, universities could use it to identify students who are struggling to graduate on time and implement policies to address these issues.
 
-We also investigated whether the University of Portalegre awarded scholarships based on merit or need (i.e., coming from a low-income family). If scholarships were awarded based on merit, it would likely indicate that recipients graduate sooner simply because they are better students. However, we found that scholarships are awarded based on need. This suggests that the program effectively supports students during their academic journey, and increasing funding for it would be beneficial.
+Furthermore, we We also investigated whether the University of Portalegre awarded scholarships based on merit or need (i.e., coming from a low-income family). If scholarships were awarded based on merit, it would likely indicate that recipients graduate sooner simply because they are better students. However, we found [3] that scholarships are awarded based on need. This suggests that the program effectively supports students during their academic journey, and increasing funding for it would be beneficial.
 
 Our analysis also revealed that non-STEM students take longer to graduate. This finding warrants further investigation to determine if there are issues with the course structure or other contributing factors.
 
@@ -1388,13 +1389,18 @@ Future work could involve incorporating additional data sources to improve the a
 
 # References
 
-Realinho, V.; Machado, J.;Baptista, L.; Martins, M.V. Predicting
+[1] Valentim Realinho, Jorge Machado, Luís Baptista, & Mónica V. Martins. (2021). Predict students' dropout and academic success (1.0) [Data set]. Zenodo. 
+
+https://doi.org/10.5281/zenodo.5777340
+
+[2] Realinho, V.; Machado, J.;Baptista, L.; Martins, M.V. Predicting
 Student Dropout and Academic Success. Data 2022, 7, 146.
+
 https://doi.org/10.3390/data7110146
 
+[3] Politècnico De Portalegrebolsas de estudo.
 
-Valentim Realinho, Jorge Machado, Luís Baptista, & Mónica V. Martins. (2021). Predict students' dropout and academic success (1.0) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.5777340
-
+https://www.ipportalegre.pt/pt/estudantes/servicos-de-acao-social/bolsas-de-estudo/
 
 
 ## Appendix A
