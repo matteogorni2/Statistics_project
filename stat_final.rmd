@@ -1,7 +1,7 @@
 ---
 title: "Statistical learning final project"
 date: "2024-07-11"
-author: "Di Pasquale Giuseppe, Gorni Selvestrini Matteo"
+author: "Di Pasquale Giuseppe, Gorni Silvestrini Matteo"
 output: 
     pdf_document:
       toc: true
@@ -28,7 +28,7 @@ header-includes:
 \newpage
 # Introduction
 
-The data was originally collected by the Polytechnic Institute of Portalegre in Portugal to build machine learning models that predict a student’s outcome based on various socioeconomic factors and academic performance [1]. This was done to develop an analytics tool for the tutoring program to direct their efforts more effectively.[2]
+The data was originally collected by the Polytechnic Institute of Portalegre in Portugal to build machine learning models that predict a student’s outcome based on various socioeconomic factors and academic performance. This was done to develop an analytics tool for the tutoring program to direct their efforts more effectively.
 
 The dataset was created from several disjoint databases and includes students enrolled in different undergraduate degrees, such as agronomy, design, education, nursing, journalism, management, social service, and technologies, it consists of 4424 records with 35 features.
 
@@ -66,7 +66,7 @@ data$is_Graduated[which(data$is_Graduated == 'Graduate')] <- 'Yes'
 
 ```
 
-***Missing values and data balance check:***
+***Missing values and data balence check:***
 
 There were no missing values and the dataset is balanced.
 
@@ -370,7 +370,7 @@ kable_styling(kable(table(data$Course),
 
 ***Nationality:***
 
-Categorical variable representing a students nationality: looking at the data we saw that while we had a lot of labels (one for each nationality), the vast majority of people were Portuguese, therefore we labeled data in the following way.
+Categorical variable representing a students nationality: looking at the data we saw that while we had a lot of labels (one for each nationality), the vast majority of people were Portuguese, therefore we labeled data in the following way
 
 ```{r, echo = F}
 
@@ -398,7 +398,6 @@ Given that to build our model we are going to use only information that was pres
 
 - Tuition fees up do date.
 
-- We also removed the 'International' variable since it was rendundant.
 ```{r, echo = F, message = F}
 
 # Remove useless columns
@@ -413,7 +412,7 @@ data <- data[, -which(grepl('Application', colnames(data)) |
 
 ```
 
-
+We also removed the 'International' variable since it was rendundant.
 ```{r}
 table(data$Nationality, data$International)
 data <- data[, -which(colnames(data) == 'International')]
@@ -470,9 +469,9 @@ Most of our dataset's features are categorical, therefore we will plot the data 
 
 - Students who receive a scholarship have a higher graduation rate than those who do not (76.0% vs 41.3%); (table 16)
 
-- Women seem to graduate on time much more than men do (57.9% vs 35.2%). (table 17)
+- Women seem graduate on time much more than men do (57.9% vs 35.2%). (table 17)
 
-- From the figures below we can see that the distribution of 'Age at enrollment' does not showcase a normal behaviour and it's different between students who graduate and those who do not: both of them have a high right tail with more outliers, but the distribution of graduate on time is more concentrated around the mean value (20 years). 
+- From the figures below we can see that 'Age at enrollment' have not a normal distribution, we can see that the distribution of the age at enrollment is different for students who graduate and those who do not. Both have an high right tail with more outliers, but the distribution of graduate on time is more concentrated around the mean value (20 years). 
 
 
 ```{r sample, echo = F, results = 'asis'}
@@ -646,17 +645,7 @@ par(mfrow = c(1, 1))
 
 # Model building
 
-We will now try to build different models using the training set, the models we will use include logistic regression, linear discriminant analysis (LDA), quadratic discriminant analysis (QDA), ridge regression and lasso regression. We will then evaluate the performance of these models using the test set by plotting the confusion matrix and the ROC curve. Finally, we'll compare the relative coefficients.
-
-Before proceeding, we will translate the 'Age at enrollment' variable to avoid a high intercept value.
-
-```{r}
-train$Age.at.enrollment <- train$Age.at.enrollment - 17
-test$Age.at.enrollment <- test$Age.at.enrollment - 17
-```
-
-
-
+We will now try to build different models using the training set, the models we will use include logistic regression, linear discriminant analysis (LDA), quadratic discriminant analysis (QDA), ridge regression and lasso regression. We will then evaluate the performance of these models using the test set working with the confusion matrix and the ROC curve and finally we compare the relative coefficients.
 
 ## Logistic Regression
 
@@ -680,7 +669,7 @@ fit_logit_1 <- glm(is_Graduated ~ .,
             data = train)
 summary(fit_logit_1)
 
-# Stepwise selection
+# Keep only significant variables
 fit_logit_2 <- step(fit_logit_1)
 summary(fit_logit_2)
 
@@ -710,7 +699,7 @@ One very important feature of logistic regression is that it is possible to look
 
 - being a scholarship holder is associated with a decrease of 2.18 in the log-odds of graduating compared to not being a scholarship holder;
 
-- each additional year of age at enrollment is associated with a decrease of 0.366 in the log-odds of graduating. 
+- each additional year of age at enrollment is associated with a decrease of 0.37 in the log-odds of graduating.
 
 
 ```{r, echo = F, message = F, results = 'hide', warning = F}
@@ -731,8 +720,6 @@ In logistic regression, interactions occur when the effect of one predictor vari
 fit_int_1 <- update(fit_logit_3, 
                           .~.*.)
 summary(fit_int_1)
-
-# Stepwise selection
 fit_int_2 <- step(fit_int_1)
 ```
 ```{r, echo = T}
@@ -748,7 +735,7 @@ pred_int <- predict(fit_int_2,
 
 ```
 
-\newpage
+
 We find that the single variables are like the simple model, but from the significant interactions we have that:
 
 - being male in a non-STEM course is associated with an increase of 0.63 in the log-odds of graduating;
@@ -757,7 +744,7 @@ We find that the single variables are like the simple model, but from the signif
 
 - being male with a scholarship decrease the log-odds of graduating by 0.86;
 
-- being a scholarship holder decreases log-odds of graduating by 0.12 for each year of age at enrollment time. Recalling that in this case the coefficient for scholarship holder is 1.60, it means that if you enroll at 20 years old and you have a scholarship, the log-odds of graduating are 1.60 - 0.12 * 20 = -0.80 compared to those who did not get the scholarship.
+- being a scholarship holder decreases log-odds of graduating by 0.12 for each year of age at enrollment time. Recalling that the coefficient for scholarship holder is 3.64 it means that if you enroll at 20 years old and you are a scholarship holder, so the log-odds of graduating are 3.64 - 0.12 * 20 = 1.24 compared to those who did not get the scholarship.
 
 
 We then plot residuals for both models in order to gain even more insights about the data we are working with: by looking Q-Q residuals plot, it is evident that the residuals are not normally distributed, suggesting that the variables included in the model are not sufficient to explain the data variability.
@@ -829,16 +816,18 @@ cat(c("\\begin{table}[!htb]
 ```
 
 \newpage
-For the upcoming models we decided to use confusion matrices as the main metric to evaluate our models' performance, We choose to do this by applying Occam's razor principle and choose to extract only information that are relevant to our research question, and finally we compare all the models using classification evaluation metrics. 
-
 ## Linear Discriminant Analysis (LDA)
 
 LDA is a classic statistical technique utilized in machine learning and pattern recognition for classification tasks. We employ it to identify which linear combination of features best separates multiple classes or categories in our dataset.
 
 At its core, LDA operates under the assumption that the data can be represented as multivariate Gaussian distributions and that the classes share the same covariance matrix. It seeks to find a projection of the data onto a lower-dimensional space while maximizing the separation between classes and minimizing the variance within each class. 
-Even if the assumptions of LDA are not met, it is still possible to apply it when the variables are discrete. In such cases, LDA can still provide good separation between classes, especially if the differences between classes are sufficiently pronounced. 
+Even if the assumptions of LDA are not met, it is still possible to apply it when the variables are discrete. In such cases, LDA can still provide good separation between classes, especially if the differences between classes are sufficiently pronounced. Although the optimal performance of LDA is achieved when its assumptions are satisfied, it can still be a useful tool for exploring the data and gaining preliminary insights into the structure of the classes, even when the assumptions are violated.
 
+From now on we will use only confusion matrix on test set to evaluate the models, we will comparate all the models at the end.
 
+DA VEDERE SE CAMBIARE
+ADESSO CI CONCENTRIAMO SOLO SUI RISULTATI PIÙ IMPORTANTI, QUALI LE CONFUSION MATRIX E LE ALTRE COSE...
+I COEFFICIENTI DELLE VARIABILI VERRANNO CONFRONTATI ALLA FINE CON GLI ALTRI MODELLI
 ```{r, echo = F}
 ######################################
 # Linear Discriminant Analysis (LDA)
@@ -1071,7 +1060,7 @@ colnames(pred_lasso) <- 'pred_lasso'
 
 ```
 
-Like previously, we can see the evolution of the coefficients of the lasso model with respect to the lambda value, left figure. We can see that the coefficients are shrinking to zero as the lambda value increases, this is a clear sign that the model is working correctly and that the regularization is working as expected. The right figure shows the deviance of the model with respect to the lambda value, we can see that the deviance is decreasing as the lambda value increases, this is a clear sign that the model is working correctly and that the regularization is working as expected. However, differently from the ridge model, the coefficients difficultly change direction over the lambda value and they collapse to 0 more quickly than ridge model.
+Like previously, we can see the evolution of the coefficients of the lasso model with respect to the lambda value, left figure. We can see that the coefficients are shrinking to zero as the lambda value increases, this is a clear sign that the model is working correctly and that the regularization is working as expected. The right figure shows the deviance of the model with respect to the lambda value, we can see that the deviance is decreasing as the lambda value increases, this is a clear sign that the model is working correctly and that the regularization is working as expected. However, unlike the ridge model, the coefficients hardly change direction over the lambda value and converge to 0 faster than the ridge model.
 
 ```{r, echo = F, fig.align = 'center', warning = F}
 
@@ -1103,13 +1092,13 @@ cm_lasso <- kable(table(test$is_Graduated, round(pred_lasso)),
 cat(c("\\begin{table}[!htb]
     \\fontsize{9}{11}\\selectfont
     \\begin{minipage}{.5\\linewidth}
-      \\caption{Test vs Ridge predictions}
+      \\caption{Test vs LDA predictions}
       \\centering",
       cm_ridge,
       "\\end{minipage}%
     \\begin{minipage}{.5\\linewidth}
       \\centering
-        \\caption{Test vs Lasso predictions}", 
+        \\caption{Test vs QDA predictions}", 
       cm_lasso,
       "\\end{minipage}
 \\end{table}"
@@ -1119,7 +1108,8 @@ cat(c("\\begin{table}[!htb]
 
 # Model Evaluation
 
-We intend to evaluate our models by plotting their respective ROC curves and computing some standard evaluation metrics, such as precision, accuracy, recall and f1 score.
+We intend to evaluate our models by plotting their respective ROC curves and computing some standard evaluation metrics, such as precision, accuracy, recall and f1 score. Furthermore, we will compare the coefficients of all models keeping out the QDA model, which has no coefficients comparable, and the Logistic with interactions model due to the fact it has more variables than the other models.
+
 
 ROC (Receiver Operating Characteristic) curves are graphical representations used to evaluate the performance of binary classification models. The ROC curve plots the True Positive Rate (TPR) against the False Positive Rate (FPR) at various threshold settings.
 
@@ -1260,19 +1250,9 @@ kable_styling(kable(results,
 
 As we can see from the figure above and from table 26, all the models have a very similar performance, the only model that stands out is the QDA model, which has the best recall, but the worst precision since it predicts 'graduated on time' more often than other models. The other models have a very similar performance in terms of AUC, accuracy, precision, recall and F1 score. This tells us that there are no particular differences between the models we used and we have covered all the possible explanation from data.
 This result suggests that there are no significant differences between the models used.
-
-To explore this topic further we comparate the coefficients of all models keeping out the QDA model, which has no coefficients comparable, and the Logistic with interactions model due to the fact it has more variables than the other models.
-
-
-
-
-
-
-
-We decided to use the simple logistic model to explain the phenomenon since it performs well and is an explainable model.
-Due to the structure of the model, we cannot assess the percentage increase of each individual variable, but we can look at different odds ratios.
-
-To evaluate the influence of gender,for example, we need to take the exp of the coefficient related to gender.
+Given these reasons, it was decided to use the simple logistic model to explain the phenomenon for simplicity.
+Due to the structure of the model, we cannot assess the percentage increase of each individual variable, but we can observe the ratio between the variables. We can only evaluate the odds ratios.
+To evaluate the influence of gender, we need to take the exp of the coefficient related to gender.
 (exp(sex_Male) = 0.382, so if the gender is male, the probability of graduating is 0.382 times that of a female, which is (100 - 38.2)% less than that of a female).
 While the ratio between Married and Single is 1.06, the ratio between Other and Single is 0.07, which indicates that those in the Other category have a significant difference in marrying on time. Those who choose non-STEM subjects have a 58.9% lower relative probability compared to those who choose STEM subjects.
 It can be noted that those with an educated mother have more than twice the probability of graduating on time compared to those whose mother did not complete high school; apparently, knowing the mother's education level makes knowing the father's education level irrelevant.
@@ -1340,38 +1320,39 @@ lines(coef_df$Ridge,
 lines(coef_df$Lasso, 
       lwd = 2, 
       col = 'orange')
-legend('topleft', 
+legend('topright', 
        legend = c('Logit full', 'Logit final', 'LDA', 'Ridge', 'Lasso'), 
        col = c('black', 'red', 'blue', 'purple', 'orange'), 
        lty = 1)
 
 ```
 
-As previously assumed, from the graph we can see that the coefficients of the various models are very similar to each other. All models give some importance to the intercept, i.e. the reference group, except for the LDA model which does not have a direct intercept in the Rstudio output. All models agree on assigning a negative weight to Male sex and for Age and a positive weight to Scholarship holder, which is consistent with the previous analysis. Except for the Lasso model, they all agree with the positive importance of the mother's level of education, however Father's qualification is not significant since is high correlated with it. Finally, it can noted that only the Ridge model gives importance to the student's level of education, in contrast to what was assumed in the EDA (table 7).
+As previously assumed, from the graph we can see that the coefficients of the various models are very similar to each other. All models give a considerable importance to the intercept, i.e. the reference group, except for the LDA model which does not have a direct intercept in the Rstudio output. All models agree on assigning a negative weight to Male sex, a positive weight to Scholarship holder, which is consistent with the previous analysis and a negative weight for the age. Except for the Lasso model, they all agree with the positive importance of the mother's level of education, however Father's qualification is not significant since is high correlated with it. Finally, it can noted that only the Ridge model gives importance to the student's level of education, in contrast to what was assumed in the EDA (table 7).
 
 
 ## Explaining the model
 
-As we said before, since all models are similar, the logistic model is the best model to explain the phenomenon, so we will use it to explain the results:
+As we said before, the logistic model is the best model to explain the phenomenon, so we will use it to explain the results.
 
-- Contrary to what we assumed in the EDA, being married or not having a higher education degree do not seem to be influential variables in determining whether a student will graduate on time. The only relevant family variable is the mother's education level, which has a positive effect on the probability of graduating on time by at least 2.3 times compared to those whose mothers did not finish high school.
+Contrary to what we assumed in the EDA, being married or not having a higher education degree do not seem to be influential variables in determining whether a student will graduate on time. The only relevant family variable is the mother's education level, which has a positive effect on the probability of graduating on time by at least 2.3 times compared to those whose mothers did not finish high school.
 
-- There is no significant difference between those who live away from home and those who do not, nor between those who need special assistance and those who do not.
+There is no significant difference between those who live away from home and those who do not, nor between those who need special assistance and those who do not.
 
-- Those who choose a STEM course have 1.64 times the probability of graduating on time compared to those who choose a non-STEM course.
+Those who choose a STEM course have 1.64 times the probability of graduating on time compared to those who choose a non-STEM course.
 
-- Being male also negatively impacts the probability of graduating on time, with about a 38% decrease compared to the probability for females.
+Being male also negatively impacts the probability of graduating on time, with about a 38% decrease compared to the probability for females.
 
-- The financial aid from a scholarship has a significantly positive impact on the probability of graduating on time, with an increase of 7.86 times compared to those who do not have a scholarship. This indicates that not having to worry about paying for education and being able to afford not working during the study period has a significantly positive impact.
+The financial aid from a scholarship has a significantly positive impact on the probability of graduating on time, with an increase of 7.86 times compared to those who do not have a scholarship. This indicates that not having to worry about paying for education and being able to afford not working during the study period has a significantly positive impact.
 
-- Finally, age has a negative effect on the probability of graduating on time, with a 70% decrease for each additional year of age. This indicates that the later one starts university, the higher the chances of falling behind or dropping out.
+Finally, age has a negative effect on the probability of graduating on time, with a 70% decrease for each additional year of age. This indicates that the later one starts university, the higher the chances of falling behind or dropping out.
+
 
 
 # Conclusions
 
-We built several models capable of predicting moderately well whether a student will graduate based on enrollment data. Such a tool could be used in various real-world applications. For example, universities could use it to identify students who are struggling to graduate on time and implement policies to address these issues.
+We built several models capable of moderately predicting whether a student will graduate based on enrollment data. Such a tool could be valuable for various real-world applications. For example, universities could use it to identify students who are struggling to graduate on time and implement policies to address these issues.
 
-Furthermore, we We also investigated whether the University of Portalegre awarded scholarships based on merit or need (i.e., coming from a low-income family). If scholarships were awarded based on merit, it would likely indicate that recipients graduate sooner simply because they are better students. However, we found [3] that scholarships are awarded based on need. This suggests that the program effectively supports students during their academic journey, and increasing funding for it would be beneficial.
+We also investigated whether the University of Portalegre awarded scholarships based on merit or need (i.e., coming from a low-income family). If scholarships were awarded based on merit, it would likely indicate that recipients graduate sooner simply because they are better students. However, we found that scholarships are awarded based on need. This suggests that the program effectively supports students during their academic journey, and increasing funding for it would be beneficial.
 
 Our analysis also revealed that non-STEM students take longer to graduate. This finding warrants further investigation to determine if there are issues with the course structure or other contributing factors.
 
@@ -1386,21 +1367,15 @@ Future work could involve incorporating additional data sources to improve the a
 
 
 
-
 # References
 
-[1] Valentim Realinho, Jorge Machado, Luís Baptista, & Mónica V. Martins. (2021). Predict students' dropout and academic success (1.0) [Data set]. Zenodo. 
-
-https://doi.org/10.5281/zenodo.5777340
-
-[2] Realinho, V.; Machado, J.;Baptista, L.; Martins, M.V. Predicting
+Realinho, V.; Machado, J.;Baptista, L.; Martins, M.V. Predicting
 Student Dropout and Academic Success. Data 2022, 7, 146.
-
 https://doi.org/10.3390/data7110146
 
-[3] Politècnico De Portalegrebolsas de estudo.
 
-https://www.ipportalegre.pt/pt/estudantes/servicos-de-acao-social/bolsas-de-estudo/
+Valentim Realinho, Jorge Machado, Luís Baptista, & Mónica V. Martins. (2021). Predict students' dropout and academic success (1.0) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.5777340
+
 
 
 ## Appendix A
